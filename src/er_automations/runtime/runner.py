@@ -96,6 +96,15 @@ class Runner:
         elif priors and prior_data is PriorDataChoice.USE:
             # Resume the newest prior run rather than creating a new one.
             chosen = priors[0]
+            if chosen.status not in ("paused", "running"):
+                # A `completed` run is a historical end state; downgrading it
+                # to running would erase the "we shipped this period" signal
+                # from the run list. An `aborted` run usually means the user
+                # walked away — they should pick REMOVE or IGNORE, not USE.
+                raise ValueError(
+                    f"cannot USE prior run {chosen.id} in status {chosen.status!r}; "
+                    "pick REMOVE to drop it or IGNORE to start a new run alongside"
+                )
             models.update_run_status(self.conn, chosen.id, "running")
             run = models.get_run(self.conn, chosen.id)
             assert run is not None
@@ -146,21 +155,22 @@ class Runner:
         result = step.apply_edits(ctx, edits)
         return self._persist(handle.run, step_index, step, result, ctx.user_id)
 
-    def reject(self, handle: RunHandle, step_index: int, notes: str | None = None) -> None:
+    def reject(
+        self,
+        handle: RunHandle,
+        step_index: int,
+        step_execution_id: int,
+        notes: str | None = None,
+    ) -> None:
+        """Mark the run aborted and patch the current step attempt with
+        `bad` + the user's note. We deliberately do NOT append a new
+        attempt — Reject is metadata on what the user just saw, not a
+        re-run with new inputs. (See Sprint 2 review finding #1.)
+        """
         models.update_run_status(
             self.conn, handle.run.id, "aborted", current_step_index=step_index
         )
-        if notes:
-            # Record the rejection as an aborted step attempt so the audit
-            # log shows *why* the user bailed.
-            models.record_step(
-                self.conn,
-                handle.run.id,
-                step_index,
-                name=handle.manifest[step_index].name,
-                status="bad",
-                notes=notes,
-            )
+        models.annotate_step(self.conn, step_execution_id, status="bad", notes=notes)
 
     # ---------- internals ----------
 

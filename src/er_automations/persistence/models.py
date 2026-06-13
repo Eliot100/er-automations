@@ -304,6 +304,37 @@ def list_step_attempts(
     return [_row_to_step(r) for r in rows]
 
 
+def annotate_step(
+    conn: sqlite3.Connection,
+    step_execution_id: int,
+    *,
+    status: StepStatus | None = None,
+    notes: str | None = None,
+) -> None:
+    """Update status / notes on an existing step attempt in place.
+
+    Unlike `record_step`, this does NOT create a new attempt — it patches
+    the row the user is actively looking at. Use for user metadata flips
+    (Reject with a comment) that are not the result of re-running the
+    step with new inputs.
+    """
+    sets: list[str] = []
+    params: list[Any] = []
+    if status is not None:
+        sets.append("status = ?")
+        params.append(status)
+    if notes is not None:
+        sets.append("notes = ?")
+        params.append(notes)
+    if not sets:
+        return
+    params.append(step_execution_id)
+    conn.execute(
+        f"UPDATE step_execution SET {', '.join(sets)} WHERE id = ?",
+        params,
+    )
+
+
 def delete_step_execution(conn: sqlite3.Connection, step_execution_id: int) -> None:
     """Explicit removal of one attempt. If it was the current one, the
     most recent surviving attempt (if any) is promoted to current.

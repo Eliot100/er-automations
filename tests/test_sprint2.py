@@ -221,10 +221,12 @@ def test_prior_data_use_resumes_prior_run(tmp_path) -> None:
         auto = register_automation(conn, "x.y", "X", "Acme")
         prior = create_run(conn, auto.id, user.id, "2025-11")
         runner = Runner(conn, tmp_path / "data")
-        # Mark the prior as aborted so we can prove USE flipped it back.
+        # Mark the prior as paused (the realistic resume case — user
+        # walked away mid-run). USE explicitly refuses `aborted` and
+        # `completed` priors; those are tested below.
         from er_automations.persistence.models import get_run, update_run_status
 
-        update_run_status(conn, prior.id, "aborted")
+        update_run_status(conn, prior.id, "paused")
 
         handle = runner.start_run(
             auto.id, "2025-11", user.id, [_Counter()], prior_data=PriorDataChoice.USE
@@ -233,6 +235,45 @@ def test_prior_data_use_resumes_prior_run(tmp_path) -> None:
         assert handle.run.id == prior.id
         reloaded = get_run(conn, prior.id)
         assert reloaded is not None and reloaded.status == "running"
+
+
+def test_prior_data_use_refuses_completed_prior(tmp_path) -> None:
+    """Sprint 2 review #2: USE must not silently downgrade `completed`."""
+    import pytest
+
+    with db_session(tmp_path / "db.sqlite") as conn:
+        user = get_or_create_user(conn, "local")
+        auto = register_automation(conn, "x.y", "X", "Acme")
+        prior = create_run(conn, auto.id, user.id, "2025-11")
+        from er_automations.persistence.models import update_run_status
+
+        update_run_status(conn, prior.id, "completed")
+        runner = Runner(conn, tmp_path / "data")
+        with pytest.raises(ValueError, match="completed"):
+            runner.start_run(
+                auto.id, "2025-11", user.id, [_Counter()],
+                prior_data=PriorDataChoice.USE,
+            )
+
+
+def test_reject_patches_current_attempt_in_place(tmp_path) -> None:
+    """Sprint 2 review #1: reject annotates the existing row, not a new one."""
+    with db_session(tmp_path / "db.sqlite") as conn:
+        user = get_or_create_user(conn, "local")
+        auto = register_automation(conn, "x.y", "X", "Acme")
+        runner = Runner(conn, tmp_path / "data")
+        handle = runner.start_run(auto.id, "2025-11", user.id, [_Counter()])
+        assert not isinstance(handle, PriorDataPrompt)
+        ctx = RunContext(handle.run.id, "2025-11", user.id)
+        attempt = runner.execute_step(handle, 0, ctx)
+        # The verify_rows the user saw should still be present on the row
+        # after rejection — we just annotate it.
+        runner.reject(handle, 0, attempt.id, notes="numbers look off")
+        attempts = list_step_attempts(conn, handle.run.id, 0)
+        assert len(attempts) == 1
+        assert attempts[0].status == "bad"
+        assert attempts[0].notes == "numbers look off"
+        assert attempts[0].verify_rows == [{"row_id": "1", "value": 1}]
 
 
 def test_prior_data_ignore_creates_fresh_run_alongside(tmp_path) -> None:
