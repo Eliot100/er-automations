@@ -49,6 +49,7 @@ export default function App() {
 
   async function refreshRun() {
     if (activeRunId == null) return
+    setError(null) // Sprint 5 review #4 — clear stale errors on success.
     setRunDetail(await api.getRun(activeRunId))
     setEdits([])
   }
@@ -184,7 +185,14 @@ type VerifyRowsProps = {
 function VerifyRows({ step, edits, onChange }: VerifyRowsProps) {
   const rows = step.verify_rows ?? []
   if (rows.length === 0) return <p className="muted">אין שורות לאימות</p>
-  const columns = Object.keys(rows[0]).filter((c) => c !== 'row_id')
+  // Union the keys across all rows so a sparse first row does not hide
+  // columns from the rest of the table (Sprint 5 review #1).
+  const columns = Array.from(
+    rows.reduce((set, r) => {
+      Object.keys(r).forEach((k) => set.add(k))
+      return set
+    }, new Set<string>()),
+  ).filter((c) => c !== 'row_id')
   const flagged = new Set(step.flagged_columns ?? [])
 
   function updateCell(rowId: string, column: string, oldValue: unknown, newValue: string) {
