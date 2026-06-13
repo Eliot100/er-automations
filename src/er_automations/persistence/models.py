@@ -25,6 +25,18 @@ from typing import Any
 RunStatus = str  # 'running' | 'paused' | 'completed' | 'aborted'
 StepStatus = str  # 'pending' | 'running' | 'good' | 'verify' | 'bad' | 'aborted'
 
+# Column projections — kept in one place so adding a column does not require
+# editing every SELECT site (and missing one would only fail at runtime inside
+# the row → dataclass mapper).
+_RUN_COLS = (
+    "id, automation_id, user_id, period, status, current_step_index, created_at"
+)
+_STEP_COLS = (
+    "id, run_id, step_index, attempt_no, name, status, "
+    "live_action_json, verify_rows_json, flagged_columns_json, notes, "
+    "created_by_user_id, created_at, is_current"
+)
+
 
 @dataclass(slots=True)
 class User:
@@ -86,21 +98,32 @@ def get_or_create_user(
             "INSERT INTO user (display_name, email) VALUES (?, ?)", (display_name, email)
         )
         return User(id=int(cur.lastrowid), external_id=None, display_name=display_name, email=email)
-    return User(**dict(row))
+    user = User(**dict(row))
+    # Backfill / update email when a new one is supplied. Once Outlook lands,
+    # the OID is the join key and `display_name` won't carry email forward
+    # automatically — promote whatever the caller knows.
+    if email and user.email != email:
+        conn.execute("UPDATE user SET email = ? WHERE id = ?", (email, user.id))
+        user.email = email
+    return user
 
 
 def register_automation(
     conn: sqlite3.Connection, key: str, name: str, customer: str
 ) -> Automation:
+    """Upsert by `key`. A second call with a different name/customer for the
+    same key is treated as a rename and persists — silently dropping it
+    would let typos linger forever.
+    """
+    conn.execute(
+        "INSERT INTO automation (key, name, customer) VALUES (?, ?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET name = excluded.name, customer = excluded.customer",
+        (key, name, customer),
+    )
     row = conn.execute(
         "SELECT id, key, name, customer FROM automation WHERE key = ?", (key,)
     ).fetchone()
-    if row is not None:
-        return Automation(**dict(row))
-    cur = conn.execute(
-        "INSERT INTO automation (key, name, customer) VALUES (?, ?, ?)", (key, name, customer)
-    )
-    return Automation(id=int(cur.lastrowid), key=key, name=name, customer=customer)
+    return Automation(**dict(row))
 
 
 # ---------- runs ----------
@@ -118,8 +141,7 @@ def create_run(
         (automation_id, user_id, period),
     )
     row = conn.execute(
-        "SELECT id, automation_id, user_id, period, status, current_step_index, created_at "
-        "FROM run WHERE id = ?",
+        f"SELECT {_RUN_COLS} FROM run WHERE id = ?",
         (cur.lastrowid,),
     ).fetchone()
     return Run(**dict(row))
@@ -127,8 +149,7 @@ def create_run(
 
 def get_run(conn: sqlite3.Connection, run_id: int) -> Run | None:
     row = conn.execute(
-        "SELECT id, automation_id, user_id, period, status, current_step_index, created_at "
-        "FROM run WHERE id = ?",
+        f"SELECT {_RUN_COLS} FROM run WHERE id = ?",
         (run_id,),
     ).fetchone()
     return Run(**dict(row)) if row else None
@@ -143,10 +164,7 @@ def find_prior_runs(
     """Other runs for the same (automation, period). Used to drive the
     remove/use/ignore prompt at run start. Always sorted newest-first.
     """
-    sql = (
-        "SELECT id, automation_id, user_id, period, status, current_step_index, created_at "
-        "FROM run WHERE automation_id = ? AND period = ?"
-    )
+    sql = f"SELECT {_RUN_COLS} FROM run WHERE automation_id = ? AND period = ?"
     params: list[Any] = [automation_id, period]
     if exclude_run_id is not None:
         sql += " AND id != ?"
@@ -240,10 +258,7 @@ def record_step(
 
 def _load_step(conn: sqlite3.Connection, step_id: int) -> StepExecution:
     r = conn.execute(
-        "SELECT id, run_id, step_index, attempt_no, name, status, "
-        "live_action_json, verify_rows_json, flagged_columns_json, notes, "
-        "created_by_user_id, created_at, is_current "
-        "FROM step_execution WHERE id = ?",
+        f"SELECT {_STEP_COLS} FROM step_execution WHERE id = ?",
         (step_id,),
     ).fetchone()
     return _row_to_step(r)
@@ -270,11 +285,8 @@ def _row_to_step(r: sqlite3.Row) -> StepExecution:
 def list_current_steps(conn: sqlite3.Connection, run_id: int) -> list[StepExecution]:
     """Latest attempt per step_index — what the UI shows by default."""
     rows = conn.execute(
-        "SELECT id, run_id, step_index, attempt_no, name, status, "
-        "live_action_json, verify_rows_json, flagged_columns_json, notes, "
-        "created_by_user_id, created_at, is_current "
-        "FROM step_execution WHERE run_id = ? AND is_current = 1 "
-        "ORDER BY step_index",
+        f"SELECT {_STEP_COLS} FROM step_execution "
+        "WHERE run_id = ? AND is_current = 1 ORDER BY step_index",
         (run_id,),
     ).fetchall()
     return [_row_to_step(r) for r in rows]
@@ -285,11 +297,8 @@ def list_step_attempts(
 ) -> list[StepExecution]:
     """All attempts for a (run, step), newest first. For the audit/history view."""
     rows = conn.execute(
-        "SELECT id, run_id, step_index, attempt_no, name, status, "
-        "live_action_json, verify_rows_json, flagged_columns_json, notes, "
-        "created_by_user_id, created_at, is_current "
-        "FROM step_execution WHERE run_id = ? AND step_index = ? "
-        "ORDER BY attempt_no DESC",
+        f"SELECT {_STEP_COLS} FROM step_execution "
+        "WHERE run_id = ? AND step_index = ? ORDER BY attempt_no DESC",
         (run_id, step_index),
     ).fetchall()
     return [_row_to_step(r) for r in rows]

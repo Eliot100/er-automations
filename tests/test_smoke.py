@@ -62,6 +62,26 @@ def test_user_and_automation_idempotent(tmp_path) -> None:
         assert a1.id == a2.id
 
 
+def test_register_automation_updates_name_on_rename(tmp_path) -> None:
+    """A second register_automation call with a fixed-up name persists the rename."""
+    with db_session(tmp_path / "test.db") as conn:
+        a1 = register_automation(conn, "x.y", "Monthly", "Acme")
+        a2 = register_automation(conn, "x.y", "חשבון חשמל חודשי", "כפר הנשיא")
+        assert a1.id == a2.id
+        assert a2.name == "חשבון חשמל חודשי"
+        assert a2.customer == "כפר הנשיא"
+
+
+def test_get_or_create_user_backfills_email(tmp_path) -> None:
+    """If the row was created without an email, a later call with one upserts."""
+    with db_session(tmp_path / "test.db") as conn:
+        u1 = get_or_create_user(conn, "alice")
+        assert u1.email is None
+        u2 = get_or_create_user(conn, "alice", email="alice@example.com")
+        assert u2.id == u1.id
+        assert u2.email == "alice@example.com"
+
+
 def test_step_recording_is_append_only(tmp_path) -> None:
     """Re-running a step preserves the old attempt and promotes the new one."""
     with db_session(tmp_path / "test.db") as conn:
