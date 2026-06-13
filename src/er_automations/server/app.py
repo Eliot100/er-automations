@@ -239,6 +239,7 @@ def _register_routes(app: FastAPI) -> None:
             ctx = _ctx_for(app, run_id, handle.run.period)
             runner = _runner(app, conn)
             ex = runner.execute_step(handle, step_index, ctx)
+            _persist_ctx(app, ctx)
             conn.commit()
             return _step_dict(ex)
         finally:
@@ -269,6 +270,7 @@ def _register_routes(app: FastAPI) -> None:
                 handle, step_index, ctx,
                 [Edit(**e.model_dump()) for e in edits],
             )
+            _persist_ctx(app, ctx)
             conn.commit()
             return _step_dict(ex)
         finally:
@@ -312,8 +314,16 @@ def _register_routes(app: FastAPI) -> None:
             ).fetchone()
             if row is None:
                 raise HTTPException(404, "artifact not found")
+            # Sprint 4 review #4: never serve a path outside data_root,
+            # even if the DB row was corrupted.
+            path = Path(row["path"]).resolve()
+            root = app.state.data_root.resolve()
+            try:
+                path.relative_to(root)
+            except ValueError as e:
+                raise HTTPException(404, "artifact not found") from e
             return FileResponse(
-                row["path"], filename=row["filename"], media_type=row["mime"] or None
+                path, filename=row["filename"], media_type=row["mime"] or None
             )
         finally:
             conn.close()
@@ -349,14 +359,33 @@ def _rehydrate_handle(app: FastAPI, conn: sqlite3.Connection, run_id: int):
 
 
 def _ctx_for(app: FastAPI, run_id: int, period: str) -> RunContext:
+    """Lookup the in-memory context, falling back to the on-disk mirror
+    so a server restart does not erase a half-finished run.
+    """
     ctx = app.state.contexts.get(run_id)
-    if ctx is None:
-        # USE / IGNORE flows that resumed an existing run do not preload
-        # a context; construct an empty one (steps that need uploads
-        # will read them from disk via `inputs`).
+    if ctx is not None:
+        return ctx
+    disk = _ctx_path(app, run_id)
+    if disk.exists():
+        import json
+
+        ctx = RunContext.from_json(json.loads(disk.read_text(encoding="utf-8")))
+    else:
         ctx = RunContext(run_id=run_id, period=period)
-        app.state.contexts[run_id] = ctx
+    app.state.contexts[run_id] = ctx
     return ctx
+
+
+def _persist_ctx(app: FastAPI, ctx: RunContext) -> None:
+    import json
+
+    path = _ctx_path(app, ctx.run_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(ctx.to_json(), ensure_ascii=False), encoding="utf-8")
+
+
+def _ctx_path(app: FastAPI, run_id: int) -> Path:
+    return app.state.data_root / "runs" / str(run_id) / "context.json"
 
 
 def _step_dict(s: models.StepExecution) -> dict[str, Any]:
