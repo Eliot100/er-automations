@@ -477,10 +477,29 @@
       <label>קובץ אסיק (xlsx)</label>
       <input type="file" id="runFile" accept=".xlsx,.xls" />
     </div>
+    <div class="field">
+      <label>קובץ סולארי (xlsx) · רשות</label>
+      <input type="file" id="runSolarFile" accept=".xlsx,.xls" />
+    </div>
     <div id="newRunErr"></div>
     <div class="modal-actions">
       <button class="btn" id="newRunCancel">ביטול</button>
       <button class="btn primary" id="newRunSubmit">צור ריצה</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="rejectBack">
+  <div class="modal" role="dialog" aria-label="Reject step">
+    <h3>דחיית צעד</h3>
+    <p class="hint" id="rejectStepName">—</p>
+    <div class="field">
+      <label>סיבת הדחייה</label>
+      <input type="text" id="rejectNotes" placeholder="מה לא תקין בצעד הזה?" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="rejectCancel">ביטול</button>
+      <button class="btn bad" id="rejectConfirm">דחה ובטל ריצה</button>
     </div>
   </div>
 </div>
@@ -681,9 +700,33 @@
     renderStepDetail($('stepDetail'), steps.find(s => s.step_index === S.activeStepIdx));
   }
 
+  // Terminal-run banner (completed/aborted): a run that has finished must not
+  // expose execute/approve/reject — it shows a closing message + next action.
+  function _terminalBanner(status){
+    if(status === 'completed'){
+      return `<div class="prior-prompt" style="background:var(--good-soft);border-color:var(--good)">
+        ✓ הריצה הושלמה. כל הצעדים אושרו והקבצים נוצרו.
+        <div class="choices"><button class="btn good" id="termFilesBtn">צפה בקבצים שנוצרו</button></div></div>`;
+    }
+    return `<div class="prior-prompt" style="background:#fbeaea;border-color:var(--bad)">
+      ✕ הריצה בוטלה. אין צורך בפעולה נוספת — התחל ריצה חדשה כדי לנסות שוב.
+      <div class="choices"><button class="btn primary" id="termNewBtn">ריצה חדשה</button></div></div>`;
+  }
+  function _wireTerminal(){
+    const fb = $('termFilesBtn'); if(fb) fb.addEventListener('click', () => setActiveTab('files'));
+    const nb = $('termNewBtn'); if(nb) nb.addEventListener('click', openNewRun);
+  }
+
   function renderStepDetail(host, step){
     const idx = S.activeStepIdx;
+    const runStatus = S.runDetail && S.runDetail.run ? S.runDetail.run.status : 'running';
+    const terminal = runStatus === 'completed' || runStatus === 'aborted';
     if(!step){
+      if(terminal){
+        host.innerHTML = `<h3>צעד ${idx}</h3>${_terminalBanner(runStatus)}`;
+        _wireTerminal();
+        return;
+      }
       host.innerHTML = `<h3>צעד ${idx}</h3><p class="muted">צעד זה עדיין לא בוצע.</p><div class="step-actions"><button class="btn primary" id="execBtn">▶ הרץ צעד ${idx}</button></div>`;
       $('execBtn').addEventListener('click', () => executeStep(idx));
       return;
@@ -705,12 +748,13 @@
       <div class="la-grid">${laCells || '<span class="muted">—</span>'}</div>
       ${laObjs.map(([k,v]) => `<div class="k" style="font-size:.62rem;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:6px 0 2px">${esc(k)}</div><pre class="la-json">${esc(JSON.stringify(v,null,2))}</pre>`).join('')}
       ${verifyHtml}
-      <div class="step-actions">
+      ${terminal ? _terminalBanner(runStatus) : `<div class="step-actions">
         <button class="btn" id="execBtn">▶ הרץ מחדש</button>
         <button class="btn good" id="goodBtn">✓ אישור</button>
         ${rows.length ? '<button class="btn verify" id="verifyBtn">✎ שמור עריכות והרץ</button>' : ''}
         <button class="btn bad" id="rejBtn">✕ דחייה</button>
-      </div>`;
+      </div>`}`;
+    if(terminal){ _wireTerminal(); return; }
     S.edits = [];
     host.querySelectorAll('table.verify input').forEach(inp => inp.addEventListener('input', () => {
       const rid = inp.dataset.rid, col = inp.dataset.col;
@@ -737,9 +781,47 @@
 
   // ---------- step actions ----------
   async function executeStep(idx){ try { await postJSON(`/runs/${S.activeRunId}/steps/${idx}/execute`); await refreshData(); render(); showToast('צעד '+idx+' בוצע'); } catch(e){ showErr(e); } }
-  async function approveStep(idx){ try { await postJSON(`/runs/${S.activeRunId}/steps/${idx}/approve`); await refreshData(); if(S.runDetail) S.activeStepIdx = S.runDetail.run.current_step_index; render(); showToast('אושר ✓'); } catch(e){ showErr(e); } }
+  async function approveStep(idx){
+    try {
+      await postJSON(`/runs/${S.activeRunId}/steps/${idx}/approve`);
+      await refreshData();
+      if(S.runDetail) S.activeStepIdx = S.runDetail.run.current_step_index;
+      render();
+      showToast('אושר ✓');
+      // When "אישור נדרש בכל צעד" is OFF, auto-run the next step so the
+      // operator only has to approve, not click "run" each time. The
+      // approval gate itself is preserved — the next step still pauses.
+      if(!prefs.approval && S.runDetail && S.runDetail.run.status === 'running'){
+        const nextIdx = S.runDetail.run.current_step_index;
+        const already = (S.runDetail.steps || []).some(s => s.step_index === nextIdx);
+        if(!already) await executeStep(nextIdx);
+      }
+    } catch(e){ showErr(e); }
+  }
   async function submitEdits(idx){ if(!S.edits.length){ showToast('אין עריכות לשמור'); return; } try { await postJSON(`/runs/${S.activeRunId}/steps/${idx}/edits`, S.edits); await refreshData(); render(); showToast('עריכות נשמרו'); } catch(e){ showErr(e); } }
-  async function rejectStep(step){ const notes = window.prompt('סיבת הדחייה?') || ''; try { await postJSON(`/runs/${S.activeRunId}/steps/${step.step_index}/reject`, { step_execution_id: step.id, notes }); await refreshData(); render(); showToast('הצעד נדחה'); } catch(e){ showErr(e); } }
+
+  // ---------- reject modal ----------
+  const rejectBack = $('rejectBack');
+  let _rejectStep = null;
+  function rejectStep(step){
+    _rejectStep = step;
+    $('rejectStepName').textContent = `צעד ${step.step_index}: ${step.name}`;
+    $('rejectNotes').value = '';
+    rejectBack.setAttribute('data-open','');
+    setTimeout(() => $('rejectNotes').focus(), 0);
+  }
+  function closeReject(){ rejectBack.removeAttribute('data-open'); _rejectStep = null; }
+  async function confirmReject(){
+    if(!_rejectStep) return;
+    const step = _rejectStep, notes = $('rejectNotes').value || '';
+    rejectBack.removeAttribute('data-open');
+    try { await postJSON(`/runs/${S.activeRunId}/steps/${step.step_index}/reject`, { step_execution_id: step.id, notes }); await refreshData(); render(); showToast('הצעד נדחה'); } catch(e){ showErr(e); }
+    _rejectStep = null;
+  }
+  $('rejectCancel').addEventListener('click', closeReject);
+  $('rejectConfirm').addEventListener('click', confirmReject);
+  rejectBack.addEventListener('click', e => { if(e.target === rejectBack) closeReject(); });
+  $('rejectNotes').addEventListener('keydown', e => { if(e.key === 'Enter') confirmReject(); });
 
   // ---------- new run modal ----------
   const newRunBack = $('newRunBack');
@@ -759,6 +841,7 @@
   async function submitNewRun(priorChoice){
     const period = $('runPeriod').value;
     const file = $('runFile').files[0];
+    const solarFile = $('runSolarFile').files[0];
     if(!period){ $('newRunErr').innerHTML = '<div class="err-banner">יש לבחור תקופה</div>'; return; }
     if(!file){ $('newRunErr').innerHTML = '<div class="err-banner">יש לבחור קובץ אסיק</div>'; return; }
     const fd = new FormData();
@@ -766,6 +849,7 @@
     fd.append('period', period);
     if(priorChoice) fd.append('prior_data', priorChoice);
     fd.append('upload', file);
+    if(solarFile) fd.append('solar_upload', solarFile);
     try {
       const r = await fetch('/runs', { method:'POST', body: fd });
       if(!r.ok) throw new Error(r.status+' '+await r.text());

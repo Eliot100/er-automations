@@ -181,3 +181,49 @@ def test_unknown_automation_is_404(tmp_path) -> None:
             files={"upload": ("in.xlsx", io.BytesIO(b""), "application/octet-stream")},
         )
         assert r.status_code == 404
+
+
+def test_run_context_endpoint_round_trips(tmp_path) -> None:
+    """GET /runs/{id}/context surfaces the JSON-safe blackboard, including
+    the registered asik input path."""
+    with TestClient(_fresh_app(tmp_path)) as c:
+        c.post(
+            "/automations",
+            json={"key": "t.manual", "name": "T", "customer": "Acme"},
+        )
+        r = c.post(
+            "/runs",
+            data={"automation_key": "t.manual", "period": "2025-11"},
+            files={"upload": ("in.xlsx", io.BytesIO(b"FAKE"), "application/octet-stream")},
+        )
+        run_id = r.json()["run_id"]
+
+        r = c.get(f"/runs/{run_id}/context")
+        assert r.status_code == 200
+        ctx = r.json()
+        assert ctx["run_id"] == run_id
+        assert ctx["period"] == "2025-11"
+        assert ctx["inputs"]["asik"].endswith("in.xlsx")
+        # Unknown run id is a clean 404.
+        assert c.get("/runs/99999/context").status_code == 404
+
+
+def test_optional_solar_upload_is_registered_as_input(tmp_path) -> None:
+    """A second file upload lands as ctx.inputs['solar'] alongside asik."""
+    with TestClient(_fresh_app(tmp_path)) as c:
+        c.post(
+            "/automations",
+            json={"key": "t.manual", "name": "T", "customer": "Acme"},
+        )
+        r = c.post(
+            "/runs",
+            data={"automation_key": "t.manual", "period": "2025-11"},
+            files={
+                "upload": ("in.xlsx", io.BytesIO(b"FAKE"), "application/octet-stream"),
+                "solar_upload": ("solar.xlsx", io.BytesIO(b"SUN"), "application/octet-stream"),
+            },
+        )
+        run_id = r.json()["run_id"]
+        ctx = c.get(f"/runs/{run_id}/context").json()
+        assert ctx["inputs"]["asik"].endswith("in.xlsx")
+        assert ctx["inputs"]["solar"].endswith("solar_solar.xlsx")

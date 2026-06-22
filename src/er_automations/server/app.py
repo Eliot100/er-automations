@@ -13,6 +13,7 @@ Endpoints:
     GET  /runs                                 — list (optional filter by automation+period)
     POST /runs                                 — start a run (uploads xlsx + period)
     GET  /runs/{id}                            — current state (steps + statuses)
+    GET  /runs/{id}/context                     — inspect the run blackboard (read-only)
     POST /runs/{id}/steps/{idx}/execute        — run step idx, return its state
     POST /runs/{id}/steps/{idx}/approve        — advance
     POST /runs/{id}/steps/{idx}/edits          — submit edits, re-run step
@@ -146,6 +147,7 @@ def _register_routes(app: FastAPI) -> None:
         period: str = Form(...),
         prior_data: str | None = Form(None),
         upload: UploadFile = File(...),
+        solar_upload: UploadFile | None = File(None),
     ) -> StartRunOut:
         conn = init_db(app.state.db_path)
         try:
@@ -189,6 +191,16 @@ def _register_routes(app: FastAPI) -> None:
                     run_id=run.id, period=period, user_id=user.id,
                     inputs={"asik": str(input_path)},
                 )
+            # Optional second upload: the dedicated solar input. The Asik
+            # consumption file carries no solar sheet, so solar accounting
+            # runs against this separate file when the operator supplies it.
+            # Stored alongside the asik input and surfaced to steps via
+            # ctx.inputs["solar"] (parallel to ctx.inputs["asik"]).
+            if solar_upload is not None and solar_upload.filename:
+                solar_payload = await solar_upload.read()
+                solar_path = input_dir / ("solar_" + solar_upload.filename)
+                solar_path.write_bytes(solar_payload)
+                ctx.inputs["solar"] = str(solar_path)
             app.state.contexts[run.id] = ctx
             _persist_ctx(app, ctx)
             conn.commit()
@@ -328,6 +340,23 @@ def _register_routes(app: FastAPI) -> None:
             return FileResponse(
                 path, filename=row["filename"], media_type=row["mime"] or None
             )
+        finally:
+            conn.close()
+
+    @app.get("/runs/{run_id}/context")
+    def get_run_context(run_id: int) -> dict[str, Any]:
+        """Inspect the run's blackboard — the JSON-safe view of RunContext.
+
+        Read-only debugging aid: surfaces what each step wrote (period,
+        row counts, group summary, reconciliation, …) and the registered
+        inputs, without touching the run lifecycle.
+        """
+        conn = init_db(app.state.db_path)
+        try:
+            run = models.get_run(conn, run_id)
+            if run is None:
+                raise HTTPException(404, "run not found")
+            return _ctx_for(app, run_id, run.period).to_json()
         finally:
             conn.close()
 
