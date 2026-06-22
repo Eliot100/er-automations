@@ -159,7 +159,10 @@ def _register_routes(app: FastAPI) -> None:
             user = _current_user(app, conn)
             runner = Runner(conn, app.state.data_root)
             choice = _parse_prior_data(prior_data)
-            result = runner.start_run(auto.id, period, user.id, manifest, prior_data=choice)
+            try:
+                result = runner.start_run(auto.id, period, user.id, manifest, prior_data=choice)
+            except ValueError as e:
+                raise HTTPException(409, str(e))
             if isinstance(result, PriorDataPrompt):
                 return StartRunOut(
                     prior_data_prompt={
@@ -176,11 +179,18 @@ def _register_routes(app: FastAPI) -> None:
             input_dir.mkdir(parents=True, exist_ok=True)
             input_path = input_dir / (upload.filename or "input.xlsx")
             input_path.write_bytes(payload)
-            ctx = RunContext(
-                run_id=run.id, period=period, user_id=user.id,
-                inputs={"asik": str(input_path)},
-            )
+            # USE: restore prior computed context from disk, update only the asik path.
+            # All other paths: fresh context.
+            if choice is PriorDataChoice.USE:
+                ctx = _ctx_for(app, run.id, period)
+                ctx.inputs["asik"] = str(input_path)
+            else:
+                ctx = RunContext(
+                    run_id=run.id, period=period, user_id=user.id,
+                    inputs={"asik": str(input_path)},
+                )
             app.state.contexts[run.id] = ctx
+            _persist_ctx(app, ctx)
             conn.commit()
             return StartRunOut(run_id=run.id)
         finally:

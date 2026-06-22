@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="he">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ER Automations — Directions</title>
+<title>ER אוטומציות</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -338,7 +338,7 @@
   @keyframes spin { to { transform:rotate(360deg); } }
 </style>
 </head>
-<body dir="rtl" data-dir="cobalt" style="background-color: rgb(222, 231, 248); font-family: &quot;Public Sans&quot;; font-size: 18px">
+<body dir="rtl" data-dir="cobalt">
 
 <div class="app">
 
@@ -353,10 +353,10 @@
   <div class="topbar">
     <nav class="crumbs" id="crumbs"><span class="muted">—</span></nav>
     <div class="spacer"></div>
-    <button class="icon-btn" title="Notifications" aria-label="Notifications">
+    <button class="icon-btn" title="התראות" aria-label="התראות">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
     </button>
-    <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">
+    <button class="icon-btn" id="settingsBtn" title="הגדרות" aria-label="הגדרות">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1.1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3 1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"></path></svg>
     </button>
     <div class="avatar" title="משתמש">
@@ -368,28 +368,28 @@
     <div class="side-scroll">
       <button class="new-btn" id="newBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
-        New run
+        ריצה חדשה
       </button>
 
       <div class="nav-group">
         <div class="nav-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
-          Overview
+          סקירה כללית
         </div>
         <div class="nav-item">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l7-4 7 4V3z"></path></svg>
-          Runs <span class="count">0</span>
+          ריצות <span class="count">0</span>
         </div>
       </div>
 
       <div class="divider"></div>
 
-      <div id="autoNav"><div class="nav-label">Automations</div><div class="muted" style="padding:8px 10px;font-size:0.8rem">Loading…</div></div>
+      <div id="autoNav"><div class="nav-label">אוטומציות</div><div class="muted" style="padding:8px 10px;font-size:0.8rem">טוען…</div></div>
     </div>
 
     <div class="side-foot">
       <div class="org" id="orgInitial">ER</div>
-      <div><div class="org-name" id="orgName">ER Automations</div><div class="org-sub" id="orgSub">ops workspace</div></div>
+      <div><div class="org-name" id="orgName">ER Automations</div><div class="org-sub" id="orgSub">מרחב עבודה</div></div>
     </div>
   </aside>
 
@@ -423,43 +423,43 @@
   </main>
 </div>
 
-<div class="settings-pop" id="settingsPop" role="dialog" aria-label="Settings">
-  <h4>Settings</h4>
-  <p class="hint">Your personal preferences for this workspace.</p>
+<div class="settings-pop" id="settingsPop" role="dialog" aria-label="הגדרות">
+  <h4>הגדרות</h4>
+  <p class="hint">העדפות אישיות לסביבת העבודה.</p>
 
   <div class="set-row">
-    <label>Appearance</label>
+    <label>מראה</label>
     <div class="seg" id="segTheme">
-      <button data-val="light" aria-pressed="true">Light</button>
-      <button data-val="dark" aria-pressed="false">Dark</button>
+      <button data-val="light" aria-pressed="true">בהיר</button>
+      <button data-val="dark" aria-pressed="false">כהה</button>
     </div>
   </div>
 
   <div class="set-row">
-    <label>Accent color</label>
+    <label>צבע הדגשה</label>
     <div class="accents" id="accents">
-      <button class="accent" data-val="cobalt" style="background:#2b4ad6" aria-pressed="true" title="Cobalt"></button>
-      <button class="accent" data-val="emerald" style="background:#1f8a5b" aria-pressed="false" title="Emerald"></button>
-      <button class="accent" data-val="violet" style="background:#6d44d6" aria-pressed="false" title="Violet"></button>
-      <button class="accent" data-val="slate" style="background:#3f4654" aria-pressed="false" title="Slate"></button>
+      <button class="accent" data-val="cobalt" style="background:#2b4ad6" aria-pressed="true" title="כחול"></button>
+      <button class="accent" data-val="emerald" style="background:#1f8a5b" aria-pressed="false" title="ירוק"></button>
+      <button class="accent" data-val="violet" style="background:#6d44d6" aria-pressed="false" title="סגול"></button>
+      <button class="accent" data-val="slate" style="background:#3f4654" aria-pressed="false" title="אפור"></button>
     </div>
   </div>
 
   <div class="set-row">
-    <label>Density</label>
+    <label>צפיפות</label>
     <div class="seg" id="segDensity">
-      <button data-val="comfortable" aria-pressed="true">Comfortable</button>
-      <button data-val="compact" aria-pressed="false">Compact</button>
+      <button data-val="comfortable" aria-pressed="true">רווח</button>
+      <button data-val="compact" aria-pressed="false">צפוף</button>
     </div>
   </div>
 
   <div class="set-row">
-    <label>Text size · <span id="sizeOut">18</span>px</label>
+    <label>גודל טקסט · <span id="sizeOut">18</span>px</label>
     <input type="range" id="sizeRange" min="14" max="20" step="1" value="18" />
   </div>
 
   <div class="set-row set-toggle" style="margin-bottom:2px">
-    <div><div class="st-name">Require approval each step</div><div class="st-sub">Pause before every step runs</div></div>
+    <div><div class="st-name">אישור נדרש בכל צעד</div><div class="st-sub">עצור לפני כל הרצת צעד</div></div>
     <button class="switch" id="approvalSw" role="switch" aria-checked="true"><span class="knob"></span></button>
   </div>
 </div>
@@ -487,8 +487,8 @@
 
 <div class="toast" id="toast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
-  <span id="toastMsg">Step added</span>
-  <span class="u" id="toastUndo">Undo</span>
+  <span id="toastMsg">הצעד בוצע</span>
+  <span class="u" id="toastUndo">בטל</span>
 </div>
 
 <script>
@@ -641,7 +641,7 @@
     const initial = [...cust].find(c => /\p{L}/u.test(c)) || 'E';
     $('orgInitial').textContent = initial;
     $('orgName').textContent = cust;
-    $('orgSub').textContent = active ? active.key.split('.')[0] + ' · ops' : 'ops workspace';
+    $('orgSub').textContent = active ? active.key.split('.')[0] + ' · ops' : 'מרחב עבודה';
   }
 
   function render(){
