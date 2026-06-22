@@ -414,6 +414,7 @@
         <button class="tab active" data-tab="runs">ריצות <span class="badge" id="runsBadge">0</span></button>
         <button class="tab" data-tab="run">ריצה נוכחית</button>
         <button class="tab" data-tab="files">קבצים <span class="badge" id="filesBadge">0</span></button>
+        <button class="tab" data-tab="context">הקשר</button>
       </div>
     </div>
 
@@ -571,7 +572,7 @@
     return r.json().catch(() => ({}));
   }
 
-  const S = { automations:[], activeKey:null, runs:[], runsByKey:{}, activeRunId:null, runDetail:null, activeStepIdx:0, edits:[], tab:'runs', artifacts:[] };
+  const S = { automations:[], activeKey:null, runs:[], runsByKey:{}, activeRunId:null, runDetail:null, activeStepIdx:0, edits:[], tab:'runs', artifacts:[], context:null };
 
   function showErr(e){ const c = $('canvas'); const b = document.createElement('div'); b.className='err-banner'; b.textContent = 'שגיאה: ' + (e && e.message || e); c.prepend(b); setTimeout(()=>b.remove(), 7000); console.error(e); }
   function setStatus(text){ $('statusPill').innerHTML = '<span class="pdot"></span>' + esc(text); }
@@ -593,8 +594,12 @@
     try { S.artifacts = await getJSON('/runs/'+S.activeRunId+'/artifacts'); } catch(e){ S.artifacts=[]; }
     $('filesBadge').textContent = S.artifacts.length;
   }
+  async function loadContext(){
+    if(S.activeRunId==null){ S.context=null; return; }
+    try { S.context = await getJSON('/runs/'+S.activeRunId+'/context'); } catch(e){ S.context=null; }
+  }
   async function refreshData(){
-    if(S.activeRunId!=null){ S.runDetail = await getJSON('/runs/'+S.activeRunId); await loadArtifacts(); }
+    if(S.activeRunId!=null){ S.runDetail = await getJSON('/runs/'+S.activeRunId); await loadArtifacts(); await loadContext(); }
     await loadRuns();
   }
 
@@ -621,6 +626,7 @@
     try { S.runDetail = await getJSON('/runs/'+id); } catch(e){ showErr(e); return; }
     S.activeStepIdx = S.runDetail.run.current_step_index ?? 0;
     await loadArtifacts();
+    await loadContext();
     setStatus(statusHe(S.runDetail.run.status));
     setActiveTab('run');
   }
@@ -669,6 +675,7 @@
     if(S.tab === 'runs') return renderRuns(c);
     if(S.tab === 'run') return renderRun(c);
     if(S.tab === 'files') return renderFiles(c);
+    if(S.tab === 'context') return renderContext(c);
   }
 
   function renderRuns(c){
@@ -732,8 +739,11 @@
       return;
     }
     const la = step.live_action || {};
-    const laCells = Object.entries(la).filter(([,v]) => typeof v !== 'object' || v === null).map(([k,v]) => `<div class="la-cell"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('');
-    const laObjs = Object.entries(la).filter(([,v]) => typeof v === 'object' && v !== null);
+    // Underscore-prefixed keys are control signals (e.g. _allow_remember), not
+    // display fields — keep them out of the live-action panel.
+    const laCells = Object.entries(la).filter(([k,v]) => !k.startsWith('_') && (typeof v !== 'object' || v === null)).map(([k,v]) => `<div class="la-cell"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('');
+    const laObjs = Object.entries(la).filter(([k,v]) => !k.startsWith('_') && typeof v === 'object' && v !== null);
+    const allowRemember = !!la._allow_remember;
     const rows = step.verify_rows || [];
     const flagged = new Set(step.flagged_columns || []);
     let verifyHtml = '';
@@ -752,7 +762,7 @@
         <button class="btn" id="execBtn">▶ הרץ מחדש</button>
         <button class="btn good" id="goodBtn">✓ אישור</button>
         ${rows.length ? '<button class="btn verify" id="verifyBtn">✎ שמור עריכות והרץ</button>' : ''}
-        ${rows.length ? '<label style="display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ink-2)"><input type="checkbox" id="rememberEdits"> זכור שיוכים אלה להמשך</label>' : ''}
+        ${rows.length && allowRemember ? '<label style="display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ink-2)"><input type="checkbox" id="rememberEdits"> זכור שיוכים אלה להמשך</label>' : ''}
         <button class="btn bad" id="rejBtn">✕ דחייה</button>
       </div>`}`;
     if(terminal){ _wireTerminal(); return; }
@@ -778,6 +788,32 @@
         <span class="asize">${a.size != null ? a.size + ' B' : ''}</span>
         <a class="btn" href="/runs/${S.activeRunId}/artifacts/${a.id}" target="_blank" rel="noopener">הורד</a>
       </div>`).join('') + '</div>';
+  }
+
+  function renderContext(c){
+    if(S.activeRunId == null){ c.innerHTML = '<div class="center-msg">בחר ריצה כדי לראות את ההקשר</div>'; return; }
+    const ctx = S.context;
+    if(!ctx){ c.innerHTML = '<div class="center-msg">אין הקשר זמין לריצה זו</div>'; return; }
+    const inputs = ctx.inputs || {};
+    const inputCells = Object.entries(inputs).map(([k,v]) =>
+      `<div class="la-cell"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('') || '<span class="muted">—</span>';
+    const data = ctx.data || {};
+    // Highlight a few review-relevant fields up top; full blob below.
+    const HILITE = ['asik_period','consumption_rows','parse_anomaly_count','solar_rows','group_summary','reconcile'];
+    const present = HILITE.filter(k => k in data);
+    const scalarCells = present.filter(k => typeof data[k] !== 'object' || data[k] === null)
+      .map(k => `<div class="la-cell"><div class="k">${esc(k)}</div><div class="v">${esc(data[k])}</div></div>`).join('');
+    const objBlocks = present.filter(k => typeof data[k] === 'object' && data[k] !== null)
+      .map(k => `<div class="k" style="font-size:.62rem;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:10px 0 2px">${esc(k)}</div><pre class="la-json">${esc(JSON.stringify(data[k],null,2))}</pre>`).join('');
+    c.innerHTML = `<div style="max-width:1000px;margin:6px auto">
+      <h3 style="margin:4px 0 8px">קלטים (inputs)</h3>
+      <div class="la-grid">${inputCells}</div>
+      <h3 style="margin:18px 0 8px">שדות מפתח</h3>
+      <div class="la-grid">${scalarCells || '<span class="muted">—</span>'}</div>
+      ${objBlocks}
+      <h3 style="margin:18px 0 8px">הקשר מלא (JSON)</h3>
+      <pre class="la-json" style="max-height:420px">${esc(JSON.stringify(data,null,2))}</pre>
+    </div>`;
   }
 
   // ---------- step actions ----------
