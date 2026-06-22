@@ -351,7 +351,7 @@
   </div>
 
   <div class="topbar">
-    <nav class="crumbs"><span>Electricity</span><span class="sep">/</span><b>Untitled automation</b></nav>
+    <nav class="crumbs" id="crumbs"><span class="muted">—</span></nav>
     <div class="spacer"></div>
     <button class="icon-btn" title="Notifications" aria-label="Notifications">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
@@ -359,7 +359,9 @@
     <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1.1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3 1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"></path></svg>
     </button>
-    <div class="avatar" title="Lena Roth">LR</div>
+    <div class="avatar" title="משתמש">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path></svg>
+    </div>
   </div>
 
   <aside class="sidebar">
@@ -386,9 +388,8 @@
     </div>
 
     <div class="side-foot">
-      <div class="org">ER</div>
-      <div><div class="org-name">Energie Region</div><div class="org-sub">Graz · Workspace</div></div>
-      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 9 5 5 5-5"></path></svg>
+      <div class="org" id="orgInitial">ER</div>
+      <div><div class="org-name" id="orgName">ER Automations</div><div class="org-sub" id="orgSub">ops workspace</div></div>
     </div>
   </aside>
 
@@ -551,7 +552,7 @@
     return r.json().catch(() => ({}));
   }
 
-  const S = { automations:[], activeKey:null, runs:[], activeRunId:null, runDetail:null, activeStepIdx:0, edits:[], tab:'runs', artifacts:[] };
+  const S = { automations:[], activeKey:null, runs:[], runsByKey:{}, activeRunId:null, runDetail:null, activeStepIdx:0, edits:[], tab:'runs', artifacts:[] };
 
   function showErr(e){ const c = $('canvas'); const b = document.createElement('div'); b.className='err-banner'; b.textContent = 'שגיאה: ' + (e && e.message || e); c.prepend(b); setTimeout(()=>b.remove(), 7000); console.error(e); }
   function setStatus(text){ $('statusPill').innerHTML = '<span class="pdot"></span>' + esc(text); }
@@ -565,6 +566,7 @@
   async function loadRuns(){
     if(!S.activeKey) return;
     try { S.runs = await getJSON('/runs?automation_key='+encodeURIComponent(S.activeKey)); } catch(e){ S.runs=[]; showErr(e); }
+    S.runsByKey[S.activeKey] = S.runs;
     $('runsBadge').textContent = S.runs.length;
   }
   async function loadArtifacts(){
@@ -578,13 +580,21 @@
   }
 
   // ---------- selection ----------
+  function updateBreadcrumb(a) {
+    const crumbs = $('crumbs');
+    if (!a) { crumbs.innerHTML = '<span class="muted">—</span>'; return; }
+    crumbs.innerHTML = `<span>${esc(a.customer)}</span><span class="sep">/</span><b>${esc(a.name)}</b>`;
+  }
+
   async function selectAutomation(key){
     S.activeKey = key; S.activeRunId = null; S.runDetail = null;
     const a = S.automations.find(x => x.key === key);
     $('docTitle').textContent = a ? a.name : key;
     setStatus(a ? a.customer : '—');
+    updateBreadcrumb(a);
     renderSidebar();
     await loadRuns();
+    renderSidebar(); // re-render after runs loaded so status dots are correct
     setActiveTab('runs');
   }
   async function selectRun(id){
@@ -605,6 +615,14 @@
   document.querySelectorAll('#tabs .tab').forEach(t => t.addEventListener('click', () => setActiveTab(t.dataset.tab)));
 
   // ---------- render ----------
+  function _runStatusClass(key) {
+    // Returns 'is-live' (completed runs exist), 'is-review' (any paused/running), or ''
+    const runs = S.runsByKey[key] || [];
+    if (runs.some(r => r.status === 'running' || r.status === 'paused')) return 'is-review';
+    if (runs.some(r => r.status === 'completed')) return 'is-live';
+    return '';
+  }
+
   function renderSidebar(){
     const nav = $('autoNav');
     if(!S.automations.length){ nav.innerHTML = '<div class="nav-label">אוטומציות</div><div class="muted" style="padding:8px 10px;font-size:.8rem">אין אוטומציות רשומות</div>'; return; }
@@ -613,9 +631,17 @@
     nav.innerHTML = Object.entries(byCustomer).map(([cust, list]) => `
       <div class="nav-group">
         <div class="nav-label">${esc(cust)}</div>
-        ${list.map(a => `<div class="auto-row ${a.key===S.activeKey?'active':''}" data-key="${esc(a.key)}"><span class="dot"></span><span class="t">${esc(a.name)}</span><span class="meta">${esc(a.key.split('.').pop())}</span></div>`).join('')}
+        ${list.map(a => `<div class="auto-row ${a.key===S.activeKey?'active':''} ${_runStatusClass(a.key)}" data-key="${esc(a.key)}"><span class="dot"></span><span class="t">${esc(a.name)}</span><span class="meta">${esc(a.key.split('.').pop())}</span></div>`).join('')}
       </div>`).join('');
     nav.querySelectorAll('.auto-row').forEach(r => r.addEventListener('click', () => selectAutomation(r.dataset.key)));
+
+    // Update footer to show the active customer name
+    const active = S.automations.find(a => a.key === S.activeKey);
+    const cust = active ? active.customer : 'ER Automations';
+    const initial = [...cust].find(c => /\p{L}/u.test(c)) || 'E';
+    $('orgInitial').textContent = initial;
+    $('orgName').textContent = cust;
+    $('orgSub').textContent = active ? active.key.split('.')[0] + ' · ops' : 'ops workspace';
   }
 
   function render(){

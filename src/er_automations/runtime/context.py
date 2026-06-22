@@ -7,6 +7,7 @@ result to survive across attempts, it ships an `ArtifactRef` in `StepResult.outp
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -59,12 +60,10 @@ def _json_safe(d: dict[str, Any]) -> dict[str, Any]:
     """Drop non-serialisable values (DataFrames, bytes, etc.) — the on-disk
     context is a recovery aid, not an exact mirror.
     """
-    import json as _json
-
     out: dict[str, Any] = {}
     for k, v in d.items():
         try:
-            _json.dumps(v)
+            json.dumps(v)
         except (TypeError, ValueError):
             continue
         out[k] = v

@@ -20,10 +20,15 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
-RunStatus = str  # 'running' | 'paused' | 'completed' | 'aborted'
-StepStatus = str  # 'pending' | 'running' | 'good' | 'verify' | 'bad' | 'aborted'
+RunStatus = Literal["running", "paused", "completed", "aborted"]
+StepStatus = Literal["pending", "running", "good", "verify", "bad", "aborted"]
+
+
+def _json_or_none(v: Any) -> str | None:
+    return json.dumps(v) if v is not None else None
+
 
 # Column projections — kept in one place so adding a column does not require
 # editing every SELECT site (and missing one would only fail at runtime inside
@@ -246,20 +251,16 @@ def record_step(
             attempt_no,
             name,
             status,
-            json.dumps(live_action) if live_action is not None else None,
-            json.dumps(verify_rows) if verify_rows is not None else None,
-            json.dumps(flagged_columns) if flagged_columns is not None else None,
+            _json_or_none(live_action),
+            _json_or_none(verify_rows),
+            _json_or_none(flagged_columns),
             notes,
             created_by_user_id,
         ),
     )
-    return _load_step(conn, int(cur.lastrowid))
-
-
-def _load_step(conn: sqlite3.Connection, step_id: int) -> StepExecution:
     r = conn.execute(
         f"SELECT {_STEP_COLS} FROM step_execution WHERE id = ?",
-        (step_id,),
+        (int(cur.lastrowid),),
     ).fetchone()
     return _row_to_step(r)
 

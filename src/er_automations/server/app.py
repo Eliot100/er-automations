@@ -26,6 +26,7 @@ registered via `app.state.manifests[automation_key] = [Step, ...]`.
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import asdict
 from pathlib import Path
@@ -45,6 +46,7 @@ from er_automations.runtime import (
     Runner,
     Step,
 )
+from er_automations.runtime.runner import RunHandle
 
 
 # ---------- request / response shapes ----------
@@ -104,15 +106,6 @@ def create_app() -> FastAPI:
 # ---------- request-scoped helpers ----------
 
 
-def _open_conn(app: FastAPI) -> sqlite3.Connection:
-    conn = init_db(app.state.db_path)
-    return conn
-
-
-def _runner(app: FastAPI, conn: sqlite3.Connection) -> Runner:
-    return Runner(conn, app.state.data_root)
-
-
 def _current_user(app: FastAPI, conn: sqlite3.Connection) -> models.User:
     """Single-user placeholder. Replaced by Outlook/Entra session later."""
     return models.get_or_create_user(conn, "local")
@@ -128,7 +121,7 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.get("/automations")
     def list_automations() -> list[dict[str, Any]]:
-        conn = _open_conn(app)
+        conn = init_db(app.state.db_path)
         try:
             rows = conn.execute(
                 "SELECT id, key, name, customer FROM automation ORDER BY key"
@@ -139,7 +132,7 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.post("/automations", status_code=201)
     def create_automation(body: AutomationIn) -> dict[str, Any]:
-        conn = _open_conn(app)
+        conn = init_db(app.state.db_path)
         try:
             auto = models.register_automation(conn, body.key, body.name, body.customer)
             conn.commit()
@@ -154,7 +147,7 @@ def _register_routes(app: FastAPI) -> None:
         prior_data: str | None = Form(None),
         upload: UploadFile = File(...),
     ) -> StartRunOut:
-        conn = _open_conn(app)
+        conn = init_db(app.state.db_path)
         try:
             auto = _automation_or_404(conn, automation_key)
             manifest = app.state.manifests.get(automation_key)
@@ -164,7 +157,7 @@ def _register_routes(app: FastAPI) -> None:
                     detail=f"no manifest registered for automation {automation_key!r}",
                 )
             user = _current_user(app, conn)
-            runner = _runner(app, conn)
+            runner = Runner(conn, app.state.data_root)
             choice = _parse_prior_data(prior_data)
             result = runner.start_run(auto.id, period, user.id, manifest, prior_data=choice)
             if isinstance(result, PriorDataPrompt):
@@ -197,7 +190,7 @@ def _register_routes(app: FastAPI) -> None:
     def list_runs(
         automation_key: str | None = None, period: str | None = None
     ) -> list[dict[str, Any]]:
-        conn = _open_conn(app)
+        conn = init_db(app.state.db_path)
         try:
             sql = (
                 "SELECT r.id, r.automation_id, r.user_id, r.period, r.status, "
@@ -218,7 +211,7 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.get("/runs/{run_id}")
     def get_run(run_id: int) -> dict[str, Any]:
-        conn = _open_conn(app)
+        conn = init_db(app.state.db_path)
         try:
             run = models.get_run(conn, run_id)
             if run is None:
@@ -233,11 +226,11 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.post("/runs/{run_id}/steps/{step_index}/execute")
     def execute_step(run_id: int, step_index: int) -> dict[str, Any]:
-        conn = _open_conn(app)
+        conn = init_db(app.state.db_path)
         try:
             handle = _rehydrate_handle(app, conn, run_id)
             ctx = _ctx_for(app, run_id, handle.run.period)
-            runner = _runner(app, conn)
+            runner = Runner(conn, app.state.data_root)
             ex = runner.execute_step(handle, step_index, ctx)
             _persist_ctx(app, ctx)
             conn.commit()
@@ -247,10 +240,10 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.post("/runs/{run_id}/steps/{step_index}/approve")
     def approve_step(run_id: int, step_index: int) -> dict[str, str]:
-        conn = _open_conn(app)
+        conn = init_db(app.state.db_path)
         try:
             handle = _rehydrate_handle(app, conn, run_id)
-            runner = _runner(app, conn)
+            runner = Runner(conn, app.state.data_root)
             runner.approve(handle, step_index)
             conn.commit()
             return {"status": "ok"}
@@ -261,11 +254,11 @@ def _register_routes(app: FastAPI) -> None:
     def submit_edits(
         run_id: int, step_index: int, edits: list[EditIn]
     ) -> dict[str, Any]:
-        conn = _open_conn(app)
+        conn = init_db(app.state.db_path)
         try:
             handle = _rehydrate_handle(app, conn, run_id)
             ctx = _ctx_for(app, run_id, handle.run.period)
-            runner = _runner(app, conn)
+            runner = Runner(conn, app.state.data_root)
             ex = runner.submit_edits(
                 handle, step_index, ctx,
                 [Edit(**e.model_dump()) for e in edits],
@@ -278,10 +271,10 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.post("/runs/{run_id}/steps/{step_index}/reject")
     def reject_step(run_id: int, step_index: int, body: RejectIn) -> dict[str, str]:
-        conn = _open_conn(app)
+        conn = init_db(app.state.db_path)
         try:
             handle = _rehydrate_handle(app, conn, run_id)
-            runner = _runner(app, conn)
+            runner = Runner(conn, app.state.data_root)
             runner.reject(handle, step_index, body.step_execution_id, notes=body.notes)
             conn.commit()
             return {"status": "ok"}
@@ -290,7 +283,7 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.get("/runs/{run_id}/artifacts")
     def list_artifacts(run_id: int) -> list[dict[str, Any]]:
-        conn = _open_conn(app)
+        conn = init_db(app.state.db_path)
         try:
             rows = conn.execute(
                 "SELECT a.id, a.step_execution_id, a.kind, a.filename, a.path, a.size, a.mime "
@@ -304,7 +297,7 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.get("/runs/{run_id}/artifacts/{artifact_id}")
     def download_artifact(run_id: int, artifact_id: int) -> FileResponse:
-        conn = _open_conn(app)
+        conn = init_db(app.state.db_path)
         try:
             row = conn.execute(
                 "SELECT a.filename, a.path, a.mime FROM artifact a "
@@ -341,9 +334,7 @@ def _automation_or_404(conn: sqlite3.Connection, key: str) -> models.Automation:
     return models.Automation(**dict(row))
 
 
-def _rehydrate_handle(app: FastAPI, conn: sqlite3.Connection, run_id: int):
-    from er_automations.runtime.runner import RunHandle
-
+def _rehydrate_handle(app: FastAPI, conn: sqlite3.Connection, run_id: int) -> RunHandle:
     run = models.get_run(conn, run_id)
     if run is None:
         raise HTTPException(404, "run not found")
@@ -367,8 +358,6 @@ def _ctx_for(app: FastAPI, run_id: int, period: str) -> RunContext:
         return ctx
     disk = _ctx_path(app, run_id)
     if disk.exists():
-        import json
-
         ctx = RunContext.from_json(json.loads(disk.read_text(encoding="utf-8")))
     else:
         ctx = RunContext(run_id=run_id, period=period)
@@ -377,8 +366,6 @@ def _ctx_for(app: FastAPI, run_id: int, period: str) -> RunContext:
 
 
 def _persist_ctx(app: FastAPI, ctx: RunContext) -> None:
-    import json
-
     path = _ctx_path(app, ctx.run_id)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(ctx.to_json(), ensure_ascii=False), encoding="utf-8")
