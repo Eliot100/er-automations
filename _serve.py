@@ -38,7 +38,10 @@ WEB_INDEX = pathlib.Path(__file__).parent / "web" / "index.html"
 root = pathlib.Path("./data")
 root.mkdir(exist_ok=True)
 app = build_app(root / "automations.sqlite", root)
-app.state.manifests[AUTOMATION_KEY] = build_manifest()
+# Install-writable registry overlay: `remember=true` group assignments from
+# the verify step land here, leaving the shipped seed registry untouched.
+LIVE_REGISTRY = root / "kfar_hanasi" / "consumers.live.yaml"
+app.state.manifests[AUTOMATION_KEY] = build_manifest(live_registry_path=LIVE_REGISTRY)
 
 c = init_db(root / "automations.sqlite")
 models.register_automation(c, AUTOMATION_KEY, AUTOMATION_NAME, AUTOMATION_CUSTOMER)

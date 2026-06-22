@@ -752,6 +752,7 @@
         <button class="btn" id="execBtn">▶ הרץ מחדש</button>
         <button class="btn good" id="goodBtn">✓ אישור</button>
         ${rows.length ? '<button class="btn verify" id="verifyBtn">✎ שמור עריכות והרץ</button>' : ''}
+        ${rows.length ? '<label style="display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ink-2)"><input type="checkbox" id="rememberEdits"> זכור שיוכים אלה להמשך</label>' : ''}
         <button class="btn bad" id="rejBtn">✕ דחייה</button>
       </div>`}`;
     if(terminal){ _wireTerminal(); return; }
@@ -798,7 +799,13 @@
       }
     } catch(e){ showErr(e); }
   }
-  async function submitEdits(idx){ if(!S.edits.length){ showToast('אין עריכות לשמור'); return; } try { await postJSON(`/runs/${S.activeRunId}/steps/${idx}/edits`, S.edits); await refreshData(); render(); showToast('עריכות נשמרו'); } catch(e){ showErr(e); } }
+  async function submitEdits(idx){
+    if(!S.edits.length){ showToast('אין עריכות לשמור'); return; }
+    const rememberEl = $('rememberEdits');
+    const remember = !!(rememberEl && rememberEl.checked);
+    const payload = S.edits.map(e => ({ ...e, remember }));
+    try { await postJSON(`/runs/${S.activeRunId}/steps/${idx}/edits`, payload); await refreshData(); render(); showToast(remember ? 'עריכות נשמרו ונזכרו' : 'עריכות נשמרו'); } catch(e){ showErr(e); }
+  }
 
   // ---------- reject modal ----------
   const rejectBack = $('rejectBack');
