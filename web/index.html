@@ -358,140 +358,148 @@
   <div class="topbar">
     <nav class="crumbs" id="crumbs"><span class="muted">—</span></nav>
     <div class="spacer"></div>
-    <button class="icon-btn" title="התראות" aria-label="התראות">
+    <button class="icon-btn" data-i18n-title="notifications" title="התראות" aria-label="התראות">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
     </button>
-    <button class="icon-btn" id="settingsBtn" title="הגדרות" aria-label="הגדרות">
+    <button class="icon-btn" id="settingsBtn" data-i18n-title="settings" title="הגדרות" aria-label="הגדרות">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1.1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3 1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"></path></svg>
     </button>
-    <div class="avatar" title="משתמש">
+    <div class="avatar" data-i18n-title="user" title="משתמש">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path></svg>
     </div>
   </div>
 
   <aside class="sidebar">
     <div class="side-scroll">
-      <div id="autoNav"><div class="nav-label">אוטומציות</div><div class="muted" style="padding:8px 10px;font-size:0.8rem">טוען…</div></div>
+      <div id="autoNav"><div class="nav-label" data-i18n="automations">אוטומציות</div><div class="muted" style="padding:8px 10px;font-size:0.8rem" data-i18n="loading">טוען…</div></div>
     </div>
 
     <div class="side-foot">
       <div class="org" id="orgInitial">ER</div>
-      <div><div class="org-name" id="orgName">ER Automations</div><div class="org-sub" id="orgSub">מרחב עבודה</div></div>
+      <div><div class="org-name" id="orgName">ER Automations</div><div class="org-sub" id="orgSub" data-i18n="workspace">מרחב עבודה</div></div>
     </div>
   </aside>
 
   <main class="main">
     <div class="doc-head">
       <div class="doc-title-row">
-        <h1 class="doc-title" id="docTitle">בחר אוטומציה</h1>
+        <h1 class="doc-title" id="docTitle" data-i18n="selectAutomation">בחר אוטומציה</h1>
         <span class="pill" id="statusPill"><span class="pdot"></span>—</span>
         <div class="spacer"></div>
         <button class="btn primary" id="newRunBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
-          ריצה חדשה
+          <span data-i18n="newRun">ריצה חדשה</span>
         </button>
       </div>
-      <p class="doc-sub" id="docSub">אוטומציה מפוקחת — כל צעד עוצר לאישורך לפני שהבא מתחיל. שום דבר לא קורה בלי האישור שלך.</p>
+      <p class="doc-sub" id="docSub" data-i18n="docSub">אוטומציה מפוקחת — כל צעד עוצר לאישורך לפני שהבא מתחיל. שום דבר לא קורה בלי האישור שלך.</p>
 
       <div class="tabs" id="tabs">
-        <button class="tab active" data-tab="runs">ריצות <span class="badge" id="runsBadge">0</span></button>
-        <button class="tab" data-tab="run">ריצה נוכחית</button>
-        <button class="tab" data-tab="files">קבצים <span class="badge" id="filesBadge">0</span></button>
-        <button class="tab" data-tab="context">הקשר</button>
+        <button class="tab active" data-tab="runs"><span data-i18n="tabRuns">ריצות</span> <span class="badge" id="runsBadge">0</span></button>
+        <button class="tab" data-tab="run" data-i18n="tabCurrent">ריצה נוכחית</button>
+        <button class="tab" data-tab="files"><span data-i18n="tabFiles">קבצים</span> <span class="badge" id="filesBadge">0</span></button>
+        <button class="tab" data-tab="context" data-i18n="tabContext">הקשר</button>
       </div>
     </div>
 
     <div class="canvas" id="canvas">
-      <div class="center-msg">טוען…</div>
+      <div class="center-msg" data-i18n="loading">טוען…</div>
     </div>
   </main>
 </div>
 
-<div class="settings-pop" id="settingsPop" role="dialog" aria-label="הגדרות">
-  <h4>הגדרות</h4>
-  <p class="hint">העדפות אישיות לסביבת העבודה.</p>
+<div class="settings-pop" id="settingsPop" role="dialog" data-i18n-title="settings" aria-label="הגדרות">
+  <h4 data-i18n="settings">הגדרות</h4>
+  <p class="hint" data-i18n="setPersonal">העדפות אישיות לסביבת העבודה.</p>
 
   <div class="set-row">
-    <label>מראה</label>
+    <label data-i18n="language">שפה</label>
+    <div class="seg" id="segLang">
+      <button data-val="he" aria-pressed="true">עברית</button>
+      <button data-val="en" aria-pressed="false">English</button>
+    </div>
+  </div>
+
+  <div class="set-row">
+    <label data-i18n="appearance">מראה</label>
     <div class="seg" id="segTheme">
-      <button data-val="light" aria-pressed="true">בהיר</button>
-      <button data-val="dark" aria-pressed="false">כהה</button>
+      <button data-val="light" data-i18n="light" aria-pressed="true">בהיר</button>
+      <button data-val="dark" data-i18n="dark" aria-pressed="false">כהה</button>
     </div>
   </div>
 
   <div class="set-row">
-    <label>צבע הדגשה</label>
+    <label data-i18n="accent">צבע הדגשה</label>
     <div class="accents" id="accents">
-      <button class="accent" data-val="cobalt" style="background:#2b4ad6" aria-pressed="true" title="כחול"></button>
-      <button class="accent" data-val="emerald" style="background:#1f8a5b" aria-pressed="false" title="ירוק"></button>
-      <button class="accent" data-val="violet" style="background:#6d44d6" aria-pressed="false" title="סגול"></button>
-      <button class="accent" data-val="slate" style="background:#3f4654" aria-pressed="false" title="אפור"></button>
+      <button class="accent" data-val="cobalt" style="background:#2b4ad6" aria-pressed="true" data-i18n-title="cBlue" title="כחול"></button>
+      <button class="accent" data-val="emerald" style="background:#1f8a5b" aria-pressed="false" data-i18n-title="cGreen" title="ירוק"></button>
+      <button class="accent" data-val="violet" style="background:#6d44d6" aria-pressed="false" data-i18n-title="cViolet" title="סגול"></button>
+      <button class="accent" data-val="slate" style="background:#3f4654" aria-pressed="false" data-i18n-title="cGray" title="אפור"></button>
     </div>
   </div>
 
   <div class="set-row">
-    <label>צפיפות</label>
+    <label data-i18n="density">צפיפות</label>
     <div class="seg" id="segDensity">
-      <button data-val="comfortable" aria-pressed="true">רווח</button>
-      <button data-val="compact" aria-pressed="false">צפוף</button>
+      <button data-val="comfortable" data-i18n="comfortable" aria-pressed="true">רווח</button>
+      <button data-val="compact" data-i18n="compact" aria-pressed="false">צפוף</button>
     </div>
   </div>
 
   <div class="set-row">
-    <label>גודל טקסט · <span id="sizeOut">18</span>px</label>
+    <label><span data-i18n="textSize">גודל טקסט</span> · <span id="sizeOut">18</span>px</label>
     <input type="range" id="sizeRange" min="14" max="20" step="1" value="18" />
   </div>
 
   <div class="set-row set-toggle" style="margin-bottom:2px">
-    <div><div class="st-name">אישור נדרש בכל צעד</div><div class="st-sub">עצור לפני כל הרצת צעד</div></div>
+    <div><div class="st-name" data-i18n="approvalReq">אישור נדרש בכל צעד</div><div class="st-sub" data-i18n="approvalSub">עצור לפני כל הרצת צעד</div></div>
     <button class="switch" id="approvalSw" role="switch" aria-checked="true"><span class="knob"></span></button>
   </div>
 </div>
 
 <div class="modal-back" id="newRunBack">
   <div class="modal" role="dialog" aria-label="New run">
-    <h3>ריצה חדשה</h3>
+    <h3 data-i18n="newRun">ריצה חדשה</h3>
     <p class="hint" id="newRunAuto">—</p>
     <div id="priorPromptArea"></div>
     <div class="field">
-      <label>תקופה (חודש)</label>
+      <label data-i18n="period">תקופה (חודש)</label>
       <input type="month" id="runPeriod" />
     </div>
     <div class="field">
-      <label>קובץ אסיק (xlsx)</label>
+      <label data-i18n="asikFile">קובץ אסיק (xlsx)</label>
       <input type="file" id="runFile" accept=".xlsx,.xls" />
     </div>
     <div class="field">
-      <label>קובץ סולארי (xlsx) · רשות</label>
+      <label data-i18n="solarFile">קובץ סולארי (xlsx) · רשות</label>
       <input type="file" id="runSolarFile" accept=".xlsx,.xls" />
     </div>
     <div id="newRunErr"></div>
     <div class="modal-actions">
-      <button class="btn" id="newRunCancel">ביטול</button>
-      <button class="btn primary" id="newRunSubmit">צור ריצה</button>
+      <button class="btn" id="newRunCancel" data-i18n="cancel">ביטול</button>
+      <button class="btn primary" id="newRunSubmit" data-i18n="createRun">צור ריצה</button>
     </div>
   </div>
 </div>
 
 <div class="modal-back" id="rejectBack">
   <div class="modal" role="dialog" aria-label="Reject step">
-    <h3>דחיית צעד</h3>
+    <h3 data-i18n="rejectStep">דחיית צעד</h3>
     <p class="hint" id="rejectStepName">—</p>
     <div class="field">
-      <label>סיבת הדחייה</label>
-      <input type="text" id="rejectNotes" placeholder="מה לא תקין בצעד הזה?" />
+      <label data-i18n="rejectReason">סיבת הדחייה</label>
+      <input type="text" id="rejectNotes" data-i18n-ph="rejectPh" placeholder="מה לא תקין בצעד הזה?" />
     </div>
     <div class="modal-actions">
-      <button class="btn" id="rejectCancel">ביטול</button>
-      <button class="btn bad" id="rejectConfirm">דחה ובטל ריצה</button>
+      <button class="btn" id="rejectCancel" data-i18n="cancel">ביטול</button>
+      <button class="btn bad" id="rejectConfirm" data-i18n="rejectConfirm">דחה ובטל ריצה</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
-  <span id="toastMsg">הצעד בוצע</span>
-  <span class="u" id="toastUndo">בטל</span>
+  <span id="toastMsg">—</span>
+  <span class="u" id="toastUndo" data-i18n="undo">בטל</span>
 </div>
 
 <script>
@@ -506,8 +514,89 @@
 
   const PREFS_KEY = 'er_prefs';
   const ACCENTS = { cobalt:'#2b4ad6', emerald:'#1f8a5b', violet:'#6d44d6', slate:'#3f4654' };
-  let prefs = { theme:'light', accent:'cobalt', density:'comfortable', size:18, approval:true };
+  let prefs = { theme:'light', accent:'cobalt', density:'comfortable', size:18, approval:true, lang:'he' };
+  let _booted = false;  // gate re-render on lang change until the app has loaded
   try { const s = JSON.parse(localStorage.getItem(PREFS_KEY)); if (s) prefs = { ...prefs, ...s }; } catch(e){}
+
+  // ===== i18n =====
+  // UI chrome only. Data the backend produces — column headers, customer /
+  // automation names, consumer rows, context field keys — is NEVER translated
+  // here, so the Hebrew Excel output and the reference files stay identical
+  // regardless of the chosen UI language.
+  const I18N = {
+    he: {
+      notifications:'התראות', settings:'הגדרות', user:'משתמש', loading:'טוען…',
+      automations:'אוטומציות', noAutomations:'אין אוטומציות רשומות', workspace:'מרחב עבודה',
+      selectAutomation:'בחר אוטומציה', selectFromMenu:'בחר אוטומציה מהתפריט',
+      newRun:'ריצה חדשה', createRun:'צור ריצה', cancel:'ביטול',
+      docSub:'אוטומציה מפוקחת — כל צעד עוצר לאישורך לפני שהבא מתחיל. שום דבר לא קורה בלי האישור שלך.',
+      tabRuns:'ריצות', tabCurrent:'ריצה נוכחית', tabFiles:'קבצים', tabContext:'הקשר',
+      setPersonal:'העדפות אישיות לסביבת העבודה.', appearance:'מראה', light:'בהיר', dark:'כהה',
+      accent:'צבע הדגשה', cBlue:'כחול', cGreen:'ירוק', cViolet:'סגול', cGray:'אפור',
+      density:'צפיפות', comfortable:'רווח', compact:'צפוף', textSize:'גודל טקסט',
+      approvalReq:'אישור נדרש בכל צעד', approvalSub:'עצור לפני כל הרצת צעד',
+      language:'שפה', period:'תקופה (חודש)', asikFile:'קובץ אסיק (xlsx)', solarFile:'קובץ סולארי (xlsx) · רשות',
+      rejectStep:'דחיית צעד', rejectReason:'סיבת הדחייה', rejectPh:'מה לא תקין בצעד הזה?', rejectConfirm:'דחה ובטל ריצה',
+      undo:'בטל', noRunsYet:'אין ריצות עדיין.', clickNewRun:'כדי להתחיל לחץ', step:'צעד',
+      selectRunFrom:'בחר ריצה מלשונית', noStepsRun:'לא בוצעו צעדים. הרץ את צעד 0.',
+      stepsHdr:'צעדים', runCompleted:'הריצה הושלמה. כל הצעדים אושרו והקבצים נוצרו.', viewFiles:'צפה בקבצים שנוצרו',
+      runAborted:'הריצה בוטלה. אין צורך בפעולה נוספת — התחל ריצה חדשה כדי לנסות שוב.',
+      notRunYet:'צעד זה עדיין לא בוצע.', runStep:'הרץ צעד', attempt:'ניסיון', executedAt:'בוצע',
+      rowsToVerify:'שורות לאימות', rerun:'הרץ מחדש', approve:'אישור', saveEditsRun:'שמור עריכות והרץ',
+      rememberAssign:'זכור שיוכים אלה להמשך', reject:'דחייה', running:'מריץ…',
+      selectRunFiles:'בחר ריצה כדי לראות קבצים', noFiles:'אין קבצים שנוצרו לריצה זו', download:'הורד',
+      selectRunContext:'בחר ריצה כדי לראות את ההקשר', noContext:'אין הקשר זמין לריצה זו',
+      inputs:'קלטים (inputs)', keyFields:'שדות מפתח', allCtxFields:'כל שדות ההקשר', records:'רשומות', fields:'שדות',
+      rerunToast:'הורץ מחדש', stepDone:'בוצע', approved:'אושר', noEdits:'אין עריכות לשמור',
+      editsRemembered:'עריכות נשמרו ונזכרו', editsSaved:'עריכות נשמרו', stepRejected:'הצעד נדחה',
+      selectAutoFirst:'בחר אוטומציה תחילה', pickPeriod:'יש לבחור תקופה', pickAsik:'יש לבחור קובץ אסיק',
+      priorExist:'ריצות קודמות קיימות לתקופה זו. מה לעשות?', removePrior:'מחק קודמות',
+      useExisting:'השתמש בקיים', ignore:'התעלם', runCreated:'נוצרה', error:'שגיאה',
+      st_running:'רץ', st_paused:'ממתין', st_completed:'הושלם', st_aborted:'בוטל',
+    },
+    en: {
+      notifications:'Notifications', settings:'Settings', user:'User', loading:'Loading…',
+      automations:'Automations', noAutomations:'No automations registered', workspace:'Workspace',
+      selectAutomation:'Select automation', selectFromMenu:'Select an automation from the menu',
+      newRun:'New run', createRun:'Create run', cancel:'Cancel',
+      docSub:'Supervised automation — every step pauses for your approval before the next begins. Nothing happens without your sign-off.',
+      tabRuns:'Runs', tabCurrent:'Current run', tabFiles:'Files', tabContext:'Context',
+      setPersonal:'Personal workspace preferences.', appearance:'Appearance', light:'Light', dark:'Dark',
+      accent:'Accent color', cBlue:'Blue', cGreen:'Green', cViolet:'Violet', cGray:'Gray',
+      density:'Density', comfortable:'Comfortable', compact:'Compact', textSize:'Text size',
+      approvalReq:'Approval required each step', approvalSub:'Pause before every step run',
+      language:'Language', period:'Period (month)', asikFile:'Asik file (xlsx)', solarFile:'Solar file (xlsx) · optional',
+      rejectStep:'Reject step', rejectReason:'Reason for rejection', rejectPh:"What's wrong with this step?", rejectConfirm:'Reject & abort run',
+      undo:'Undo', noRunsYet:'No runs yet.', clickNewRun:'To start, click', step:'Step',
+      selectRunFrom:'Select a run from the', noStepsRun:'No steps run yet. Run step 0.',
+      stepsHdr:'Steps', runCompleted:'Run completed. All steps approved and files generated.', viewFiles:'View generated files',
+      runAborted:'Run aborted. No further action needed — start a new run to try again.',
+      notRunYet:'This step has not run yet.', runStep:'Run step', attempt:'Attempt', executedAt:'ran',
+      rowsToVerify:'Rows to verify', rerun:'Re-run', approve:'Approve', saveEditsRun:'Save edits & run',
+      rememberAssign:'Remember these assignments', reject:'Reject', running:'Running…',
+      selectRunFiles:'Select a run to see its files', noFiles:'No files generated for this run', download:'Download',
+      selectRunContext:'Select a run to see its context', noContext:'No context available for this run',
+      inputs:'Inputs', keyFields:'Key fields', allCtxFields:'All context fields', records:'records', fields:'fields',
+      rerunToast:'re-run', stepDone:'ran', approved:'Approved', noEdits:'No edits to save',
+      editsRemembered:'Edits saved & remembered', editsSaved:'Edits saved', stepRejected:'Step rejected',
+      selectAutoFirst:'Select an automation first', pickPeriod:'Please choose a period', pickAsik:'Please choose an Asik file',
+      priorExist:'Prior runs exist for this period. What to do?', removePrior:'Delete prior',
+      useExisting:'Use existing', ignore:'Ignore', runCreated:'created', error:'Error',
+      st_running:'Running', st_paused:'Awaiting', st_completed:'Completed', st_aborted:'Aborted',
+    },
+  };
+  function t(key, ...args){
+    const tbl = I18N[prefs.lang] || I18N.he;
+    let s = (tbl[key] != null ? tbl[key] : (I18N.he[key] != null ? I18N.he[key] : key));
+    args.forEach((a,i) => { s = s.replace('{'+i+'}', a); });
+    return s;
+  }
+  // Paint every static element tagged with data-i18n* attributes.
+  function applyStaticI18n(){
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => { const v = t(el.dataset.i18nTitle); el.title = v; el.setAttribute('aria-label', v); });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  }
 
   function setSeg(id, val){ document.querySelectorAll('#'+id+' button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.val === val))); }
   function applyPrefs(){
@@ -522,8 +611,15 @@
     document.getElementById('sizeRange').value = prefs.size;
     setSeg('segTheme', prefs.theme);
     setSeg('segDensity', prefs.density);
+    setSeg('segLang', prefs.lang);
     document.querySelectorAll('#accents .accent').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.val === prefs.accent)));
     document.getElementById('approvalSw').setAttribute('aria-checked', String(prefs.approval));
+    // Hebrew is RTL, English LTR — flip the whole document direction.
+    const rtl = prefs.lang !== 'en';
+    document.documentElement.lang = prefs.lang;
+    document.body.dir = rtl ? 'rtl' : 'ltr';
+    applyStaticI18n();
+    if (_booted && S.activeKey) render();
   }
   function setPref(patch){ prefs = { ...prefs, ...patch }; applyPrefs(); try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch(e){} }
 
@@ -532,6 +628,7 @@
   document.querySelectorAll('#accents .accent').forEach(b => b.addEventListener('click', () => setPref({ accent:b.dataset.val })));
   document.getElementById('sizeRange').addEventListener('input', e => setPref({ size: parseInt(e.target.value, 10) }));
   document.getElementById('approvalSw').addEventListener('click', () => setPref({ approval: !prefs.approval }));
+  document.querySelectorAll('#segLang button').forEach(b => b.addEventListener('click', () => setPref({ lang:b.dataset.val })));
   applyPrefs();
 
   // ===== toast =====
@@ -549,7 +646,7 @@
   // Pull a HH:MM:SS clock out of a timestamp (ISO or "YYYY-MM-DD HH:MM:SS"),
   // falling back to the raw string if it doesn't parse.
   const _clockFromTs = ts => { const m = String(ts||'').match(/(\d{2}):(\d{2}):(\d{2})/); return m ? m[0] : String(ts||''); };
-  const statusHe = s => ({running:'רץ', paused:'ממתין', completed:'הושלם', aborted:'בוטל'}[s] || s);
+  const statusHe = s => { const v = t('st_'+s); return v === 'st_'+s ? s : v; };
 
   async function getJSON(u){ const r = await fetch(u); if(!r.ok) throw new Error(r.status+' '+await r.text()); return r.json(); }
   async function postJSON(u, body){
@@ -560,7 +657,7 @@
 
   const S = { automations:[], activeKey:null, runs:[], runsByKey:{}, activeRunId:null, runDetail:null, activeStepIdx:0, edits:[], tab:'runs', artifacts:[], context:null };
 
-  function showErr(e){ const c = $('canvas'); const b = document.createElement('div'); b.className='err-banner'; b.textContent = 'שגיאה: ' + (e && e.message || e); c.prepend(b); setTimeout(()=>b.remove(), 7000); console.error(e); }
+  function showErr(e){ const c = $('canvas'); const b = document.createElement('div'); b.className='err-banner'; b.textContent = t('error') + ': ' + (e && e.message || e); c.prepend(b); setTimeout(()=>b.remove(), 7000); console.error(e); }
   function setStatus(text){ $('statusPill').innerHTML = '<span class="pdot"></span>' + esc(text); }
 
   // ---------- data loaders ----------
@@ -636,7 +733,7 @@
 
   function renderSidebar(){
     const nav = $('autoNav');
-    if(!S.automations.length){ nav.innerHTML = '<div class="nav-label">אוטומציות</div><div class="muted" style="padding:8px 10px;font-size:.8rem">אין אוטומציות רשומות</div>'; return; }
+    if(!S.automations.length){ nav.innerHTML = `<div class="nav-label">${esc(t('automations'))}</div><div class="muted" style="padding:8px 10px;font-size:.8rem">${esc(t('noAutomations'))}</div>`; return; }
     const byCustomer = {};
     S.automations.forEach(a => { (byCustomer[a.customer] = byCustomer[a.customer] || []).push(a); });
     nav.innerHTML = Object.entries(byCustomer).map(([cust, list]) => `
@@ -652,12 +749,12 @@
     const initial = [...cust].find(c => /\p{L}/u.test(c)) || 'E';
     $('orgInitial').textContent = initial;
     $('orgName').textContent = cust;
-    $('orgSub').textContent = active ? active.key.split('.')[0] + ' · ops' : 'מרחב עבודה';
+    $('orgSub').textContent = active ? active.key.split('.')[0] + ' · ops' : t('workspace');
   }
 
   function render(){
     const c = $('canvas');
-    if(!S.activeKey){ c.innerHTML = '<div class="center-msg">בחר אוטומציה מהתפריט</div>'; return; }
+    if(!S.activeKey){ c.innerHTML = `<div class="center-msg">${esc(t('selectFromMenu'))}</div>`; return; }
     if(S.tab === 'runs') return renderRuns(c);
     if(S.tab === 'run') return renderRun(c);
     if(S.tab === 'files') return renderFiles(c);
@@ -665,28 +762,28 @@
   }
 
   function renderRuns(c){
-    if(!S.runs.length){ c.innerHTML = '<div class="center-msg">אין ריצות עדיין.<br>לחץ <b>ריצה חדשה</b> כדי להתחיל.</div>'; return; }
+    if(!S.runs.length){ c.innerHTML = `<div class="center-msg">${esc(t('noRunsYet'))}<br>${esc(t('clickNewRun'))} <b>${esc(t('newRun'))}</b></div>`; return; }
     c.innerHTML = '<div class="run-list">' + S.runs.map(r => `
       <button class="run-row" data-id="${r.id}">
         <span class="rid">#${r.id}</span>
         <span><span class="rperiod">${esc(r.period)}</span> <span class="rwhen">${esc(r.created_at||'')}</span></span>
         <span class="status-tag status-${esc(r.status)}">${statusHe(r.status)}</span>
-        <span class="rwhen">צעד ${r.current_step_index}</span>
+        <span class="rwhen">${esc(t('step'))} ${r.current_step_index}</span>
       </button>`).join('') + '</div>';
     c.querySelectorAll('.run-row').forEach(row => row.addEventListener('click', () => selectRun(parseInt(row.dataset.id,10))));
   }
 
   function renderRun(c){
-    if(!S.runDetail){ c.innerHTML = '<div class="center-msg">בחר ריצה מלשונית <b>ריצות</b></div>'; return; }
+    if(!S.runDetail){ c.innerHTML = `<div class="center-msg">${esc(t('selectRunFrom'))} <b>${esc(t('tabRuns'))}</b></div>`; return; }
     const d = S.runDetail, steps = d.steps || [];
     const rail = steps.length ? steps.map(s => `
       <div class="step-item ${s.step_index===S.activeStepIdx?'active':''}" data-idx="${s.step_index}">
         <span class="pip s-${esc(s.status)}"></span>
         <span class="sname">${s.step_index}. ${esc(s.name)}</span>
         <span class="sattempt">#${s.attempt_no}</span>
-      </div>`).join('') : '<div class="muted" style="padding:10px;font-size:.8rem">לא בוצעו צעדים. הרץ את צעד 0.</div>';
+      </div>`).join('') : `<div class="muted" style="padding:10px;font-size:.8rem">${esc(t('noStepsRun'))}</div>`;
     c.innerHTML = `<div class="run-wrap">
-      <div class="steps-rail"><div class="nav-label">צעדים · תקופה ${esc(d.run.period)} · ${statusHe(d.run.status)}</div>${rail}</div>
+      <div class="steps-rail"><div class="nav-label">${esc(t('stepsHdr'))} · ${esc(d.run.period)} · ${statusHe(d.run.status)}</div>${rail}</div>
       <div class="detail-card" id="stepDetail"></div>
     </div>`;
     c.querySelectorAll('.step-item').forEach(it => it.addEventListener('click', () => { S.activeStepIdx = parseInt(it.dataset.idx,10); renderRun($('canvas')); }));
@@ -698,12 +795,12 @@
   function _terminalBanner(status){
     if(status === 'completed'){
       return `<div class="prior-prompt" style="background:var(--good-soft);border-color:var(--good)">
-        ✓ הריצה הושלמה. כל הצעדים אושרו והקבצים נוצרו.
-        <div class="choices"><button class="btn good" id="termFilesBtn">צפה בקבצים שנוצרו</button></div></div>`;
+        ✓ ${esc(t('runCompleted'))}
+        <div class="choices"><button class="btn good" id="termFilesBtn">${esc(t('viewFiles'))}</button></div></div>`;
     }
     return `<div class="prior-prompt" style="background:#fbeaea;border-color:var(--bad)">
-      ✕ הריצה בוטלה. אין צורך בפעולה נוספת — התחל ריצה חדשה כדי לנסות שוב.
-      <div class="choices"><button class="btn primary" id="termNewBtn">ריצה חדשה</button></div></div>`;
+      ✕ ${esc(t('runAborted'))}
+      <div class="choices"><button class="btn primary" id="termNewBtn">${esc(t('newRun'))}</button></div></div>`;
   }
   function _wireTerminal(){
     const fb = $('termFilesBtn'); if(fb) fb.addEventListener('click', () => setActiveTab('files'));
@@ -716,11 +813,11 @@
     const terminal = runStatus === 'completed' || runStatus === 'aborted';
     if(!step){
       if(terminal){
-        host.innerHTML = `<h3>צעד ${idx}</h3>${_terminalBanner(runStatus)}`;
+        host.innerHTML = `<h3>${esc(t('step'))} ${idx}</h3>${_terminalBanner(runStatus)}`;
         _wireTerminal();
         return;
       }
-      host.innerHTML = `<h3>צעד ${idx}</h3><p class="muted">צעד זה עדיין לא בוצע.</p><div class="step-actions"><button class="btn primary" id="execBtn">▶ הרץ צעד ${idx}</button></div>`;
+      host.innerHTML = `<h3>${esc(t('step'))} ${idx}</h3><p class="muted">${esc(t('notRunYet'))}</p><div class="step-actions"><button class="btn primary" id="execBtn">▶ ${esc(t('runStep'))} ${idx}</button></div>`;
       $('execBtn').addEventListener('click', (e) => executeStep(idx, e.currentTarget));
       return;
     }
@@ -735,22 +832,22 @@
     let verifyHtml = '';
     if(rows.length){
       const cols = Array.from(rows.reduce((set,r) => { Object.keys(r).forEach(k => set.add(k)); return set; }, new Set())).filter(c => c !== 'row_id');
-      verifyHtml = `<h3>שורות לאימות (${rows.length})</h3><div class="verify-scroll"><table class="verify"><thead><tr>${cols.map(col => `<th class="${flagged.has(col)?'flagged':''}">${esc(col)}</th>`).join('')}</tr></thead><tbody>${
+      verifyHtml = `<h3>${esc(t('rowsToVerify'))} (${rows.length})</h3><div class="verify-scroll"><table class="verify"><thead><tr>${cols.map(col => `<th class="${flagged.has(col)?'flagged':''}">${esc(col)}</th>`).join('')}</tr></thead><tbody>${
         rows.map((r,i) => { const rid = String(r.row_id != null ? r.row_id : i); return '<tr>' + cols.map(col => `<td class="${flagged.has(col)?'flagged':''}"><input data-rid="${esc(rid)}" data-col="${esc(col)}" data-old="${esc(r[col])}" value="${esc(r[col])}"></td>`).join('') + '</tr>'; }).join('')
       }</tbody></table></div>`;
     }
-    host.innerHTML = `<h3>צעד ${step.step_index}: ${esc(step.name)} <span class="status-tag status-${step.status==='good'?'completed':step.status==='verify'?'paused':(step.status==='bad'||step.status==='aborted')?'aborted':'running'}">${esc(step.status)}</span></h3>
-      <div class="step-meta"><span class="attempt">ניסיון #${step.attempt_no}</span>${step.created_at ? `<span>בוצע ${esc(_clockFromTs(step.created_at))}</span>` : ''}</div>
+    host.innerHTML = `<h3>${esc(t('step'))} ${step.step_index}: ${esc(step.name)} <span class="status-tag status-${step.status==='good'?'completed':step.status==='verify'?'paused':(step.status==='bad'||step.status==='aborted')?'aborted':'running'}">${esc(step.status)}</span></h3>
+      <div class="step-meta"><span class="attempt">${esc(t('attempt'))} #${step.attempt_no}</span>${step.created_at ? `<span>${esc(t('executedAt'))} ${esc(_clockFromTs(step.created_at))}</span>` : ''}</div>
       ${step.notes ? `<p class="muted">${esc(step.notes)}</p>` : ''}
       <div class="la-grid">${laCells || '<span class="muted">—</span>'}</div>
       ${laObjs.map(([k,v]) => `<div class="k" style="font-size:.62rem;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:6px 0 2px">${esc(k)}</div><pre class="la-json">${esc(JSON.stringify(v,null,2))}</pre>`).join('')}
       ${verifyHtml}
       ${terminal ? _terminalBanner(runStatus) : `<div class="step-actions">
-        <button class="btn" id="execBtn">▶ הרץ מחדש</button>
-        <button class="btn good" id="goodBtn">✓ אישור</button>
-        ${rows.length ? '<button class="btn verify" id="verifyBtn">✎ שמור עריכות והרץ</button>' : ''}
-        ${rows.length && allowRemember ? '<label style="display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ink-2)"><input type="checkbox" id="rememberEdits"> זכור שיוכים אלה להמשך</label>' : ''}
-        <button class="btn bad" id="rejBtn">✕ דחייה</button>
+        <button class="btn" id="execBtn">▶ ${esc(t('rerun'))}</button>
+        <button class="btn good" id="goodBtn">✓ ${esc(t('approve'))}</button>
+        ${rows.length ? `<button class="btn verify" id="verifyBtn">✎ ${esc(t('saveEditsRun'))}</button>` : ''}
+        ${rows.length && allowRemember ? `<label style="display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ink-2)"><input type="checkbox" id="rememberEdits"> ${esc(t('rememberAssign'))}</label>` : ''}
+        <button class="btn bad" id="rejBtn">✕ ${esc(t('reject'))}</button>
       </div>`}`;
     if(terminal){ _wireTerminal(); return; }
     S.edits = [];
@@ -766,21 +863,21 @@
   }
 
   function renderFiles(c){
-    if(S.activeRunId == null){ c.innerHTML = '<div class="center-msg">בחר ריצה כדי לראות קבצים</div>'; return; }
-    if(!S.artifacts.length){ c.innerHTML = '<div class="center-msg">אין קבצים שנוצרו לריצה זו</div>'; return; }
+    if(S.activeRunId == null){ c.innerHTML = `<div class="center-msg">${esc(t('selectRunFiles'))}</div>`; return; }
+    if(!S.artifacts.length){ c.innerHTML = `<div class="center-msg">${esc(t('noFiles'))}</div>`; return; }
     c.innerHTML = '<div class="art-list">' + S.artifacts.map(a => `
       <div class="art-row">
         <span class="akind">${esc(a.kind)}</span>
         <span class="afile">${esc(a.filename)}</span>
         <span class="asize">${a.size != null ? a.size + ' B' : ''}</span>
-        <a class="btn" href="/runs/${S.activeRunId}/artifacts/${a.id}" target="_blank" rel="noopener">הורד</a>
+        <a class="btn" href="/runs/${S.activeRunId}/artifacts/${a.id}" target="_blank" rel="noopener">${esc(t('download'))}</a>
       </div>`).join('') + '</div>';
   }
 
   function renderContext(c){
-    if(S.activeRunId == null){ c.innerHTML = '<div class="center-msg">בחר ריצה כדי לראות את ההקשר</div>'; return; }
+    if(S.activeRunId == null){ c.innerHTML = `<div class="center-msg">${esc(t('selectRunContext'))}</div>`; return; }
     const ctx = S.context;
-    if(!ctx){ c.innerHTML = '<div class="center-msg">אין הקשר זמין לריצה זו</div>'; return; }
+    if(!ctx){ c.innerHTML = `<div class="center-msg">${esc(t('noContext'))}</div>`; return; }
     const inputs = ctx.inputs || {};
     const inputCells = Object.entries(inputs).map(([k,v]) =>
       `<div class="la-cell"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('') || '<span class="muted">—</span>';
@@ -798,18 +895,18 @@
     const overview = Object.keys(data).map(k => {
       const v = data[k];
       let summ;
-      if(Array.isArray(v)) summ = `<span class="muted">${v.length} רשומות</span>`;
-      else if(v !== null && typeof v === 'object') summ = `<span class="muted">{${Object.keys(v).length} שדות}</span>`;
+      if(Array.isArray(v)) summ = `<span class="muted">${v.length} ${esc(t('records'))}</span>`;
+      else if(v !== null && typeof v === 'object') summ = `<span class="muted">{${Object.keys(v).length} ${esc(t('fields'))}}</span>`;
       else { const s = String(v); summ = esc(s.length > 80 ? s.slice(0,80)+'…' : s); }
       return `<tr><td class="k" style="white-space:nowrap;padding:3px 10px 3px 0">${esc(k)}</td><td>${summ}</td></tr>`;
     }).join('');
     c.innerHTML = `<div style="max-width:1000px;margin:6px auto">
-      <h3 style="margin:4px 0 8px">קלטים (inputs)</h3>
+      <h3 style="margin:4px 0 8px">${esc(t('inputs'))}</h3>
       <div class="la-grid">${inputCells}</div>
-      <h3 style="margin:18px 0 8px">שדות מפתח</h3>
+      <h3 style="margin:18px 0 8px">${esc(t('keyFields'))}</h3>
       <div class="la-grid">${scalarCells || '<span class="muted">—</span>'}</div>
       ${objBlocks}
-      <h3 style="margin:18px 0 8px">כל שדות ההקשר</h3>
+      <h3 style="margin:18px 0 8px">${esc(t('allCtxFields'))}</h3>
       <table style="font-size:.8rem;border-collapse:collapse"><tbody>${overview || '<tr><td class="muted">—</td></tr>'}</tbody></table>
     </div>`;
   }
@@ -823,7 +920,7 @@
     const isRerun = !!prevStep;
     const prevAttempt = prevStep ? prevStep.attempt_no : 0;
     let restore = null;
-    if(btn){ restore = btn.innerHTML; btn.disabled = true; btn.innerHTML = '⏳ מריץ…'; }
+    if(btn){ restore = btn.innerHTML; btn.disabled = true; btn.innerHTML = '⏳ ' + esc(t('running')); }
     try {
       await postJSON(`/runs/${S.activeRunId}/steps/${idx}/execute`);
       await refreshData();
@@ -832,7 +929,7 @@
       const card = $('stepDetail'); if(card) card.classList.add('ran');
       const now = (S.runDetail?.steps || []).find(s => s.step_index === idx);
       const att = now ? now.attempt_no : prevAttempt + 1;
-      showToast(isRerun ? `צעד ${idx} הורץ מחדש · ניסיון #${att}` : `צעד ${idx} בוצע`);
+      showToast(isRerun ? `${t('step')} ${idx} ${t('rerunToast')} · ${t('attempt')} #${att}` : `${t('step')} ${idx} ${t('stepDone')}`);
     } catch(e){
       if(btn && restore != null){ btn.disabled = false; btn.innerHTML = restore; }
       showErr(e);
@@ -844,7 +941,7 @@
       await refreshData();
       if(S.runDetail) S.activeStepIdx = S.runDetail.run.current_step_index;
       render();
-      showToast('אושר ✓');
+      showToast(t('approved') + ' ✓');
       // When "אישור נדרש בכל צעד" is OFF, auto-run the next step so the
       // operator only has to approve, not click "run" each time. The
       // approval gate itself is preserved — the next step still pauses.
@@ -856,11 +953,11 @@
     } catch(e){ showErr(e); }
   }
   async function submitEdits(idx){
-    if(!S.edits.length){ showToast('אין עריכות לשמור'); return; }
+    if(!S.edits.length){ showToast(t('noEdits')); return; }
     const rememberEl = $('rememberEdits');
     const remember = !!(rememberEl && rememberEl.checked);
     const payload = S.edits.map(e => ({ ...e, remember }));
-    try { await postJSON(`/runs/${S.activeRunId}/steps/${idx}/edits`, payload); await refreshData(); render(); showToast(remember ? 'עריכות נשמרו ונזכרו' : 'עריכות נשמרו'); } catch(e){ showErr(e); }
+    try { await postJSON(`/runs/${S.activeRunId}/steps/${idx}/edits`, payload); await refreshData(); render(); showToast(remember ? t('editsRemembered') : t('editsSaved')); } catch(e){ showErr(e); }
   }
 
   // ---------- reject modal ----------
@@ -868,7 +965,7 @@
   let _rejectStep = null;
   function rejectStep(step){
     _rejectStep = step;
-    $('rejectStepName').textContent = `צעד ${step.step_index}: ${step.name}`;
+    $('rejectStepName').textContent = `${t('step')} ${step.step_index}: ${step.name}`;
     $('rejectNotes').value = '';
     rejectBack.setAttribute('data-open','');
     setTimeout(() => $('rejectNotes').focus(), 0);
@@ -878,7 +975,7 @@
     if(!_rejectStep) return;
     const step = _rejectStep, notes = $('rejectNotes').value || '';
     rejectBack.removeAttribute('data-open');
-    try { await postJSON(`/runs/${S.activeRunId}/steps/${step.step_index}/reject`, { step_execution_id: step.id, notes }); await refreshData(); render(); showToast('הצעד נדחה'); } catch(e){ showErr(e); }
+    try { await postJSON(`/runs/${S.activeRunId}/steps/${step.step_index}/reject`, { step_execution_id: step.id, notes }); await refreshData(); render(); showToast(t('stepRejected')); } catch(e){ showErr(e); }
     _rejectStep = null;
   }
   $('rejectCancel').addEventListener('click', closeReject);
@@ -889,7 +986,7 @@
   // ---------- new run modal ----------
   const newRunBack = $('newRunBack');
   function openNewRun(){
-    if(!S.activeKey){ showToast('בחר אוטומציה תחילה'); return; }
+    if(!S.activeKey){ showToast(t('selectAutoFirst')); return; }
     const a = S.automations.find(x => x.key === S.activeKey);
     $('newRunAuto').textContent = a ? (a.name + ' · ' + a.customer) : S.activeKey;
     $('priorPromptArea').innerHTML = ''; $('newRunErr').innerHTML = '';
@@ -904,8 +1001,8 @@
     const period = $('runPeriod').value;
     const file = $('runFile').files[0];
     const solarFile = $('runSolarFile').files[0];
-    if(!period){ $('newRunErr').innerHTML = '<div class="err-banner">יש לבחור תקופה</div>'; return; }
-    if(!file){ $('newRunErr').innerHTML = '<div class="err-banner">יש לבחור קובץ אסיק</div>'; return; }
+    if(!period){ $('newRunErr').innerHTML = `<div class="err-banner">${esc(t('pickPeriod'))}</div>`; return; }
+    if(!file){ $('newRunErr').innerHTML = `<div class="err-banner">${esc(t('pickAsik'))}</div>`; return; }
     const fd = new FormData();
     fd.append('automation_key', S.activeKey);
     fd.append('period', period);
@@ -918,20 +1015,21 @@
       const out = await r.json();
       if(out.prior_data_prompt){
         const n = (out.prior_data_prompt.prior_runs || []).length;
-        $('priorPromptArea').innerHTML = `<div class="prior-prompt">קיימות ${n} ריצות קודמות לתקופה זו. מה לעשות?
-          <div class="choices"><button class="btn bad" data-c="remove">מחק קודמות</button><button class="btn good" data-c="use">השתמש בקיים</button><button class="btn" data-c="ignore">התעלם</button></div></div>`;
+        $('priorPromptArea').innerHTML = `<div class="prior-prompt">${n} · ${esc(t('priorExist'))}
+          <div class="choices"><button class="btn bad" data-c="remove">${esc(t('removePrior'))}</button><button class="btn good" data-c="use">${esc(t('useExisting'))}</button><button class="btn" data-c="ignore">${esc(t('ignore'))}</button></div></div>`;
         $('priorPromptArea').querySelectorAll('button').forEach(b => b.addEventListener('click', () => submitNewRun(b.dataset.c)));
         return;
       }
       closeNewRun();
       await loadRuns();
-      showToast('ריצה #'+out.run_id+' נוצרה');
+      showToast('#'+out.run_id+' '+t('runCreated'));
       await selectRun(out.run_id);
-    } catch(e){ $('newRunErr').innerHTML = '<div class="err-banner">שגיאה: '+esc(e.message||e)+'</div>'; }
+    } catch(e){ $('newRunErr').innerHTML = `<div class="err-banner">${esc(t('error'))}: `+esc(e.message||e)+'</div>'; }
   }
   $('newRunSubmit').addEventListener('click', () => submitNewRun(null));
 
   // ---------- boot ----------
+  _booted = true;
   loadAutomations();
 </script>
 </body>
