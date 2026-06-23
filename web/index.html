@@ -322,7 +322,11 @@
   table.verify th.flagged, table.verify td.flagged { background:var(--verify-soft); }
   table.verify input { width:100%; min-width:80px; border:1px solid transparent; background:transparent; font:inherit; padding:2px 4px; border-radius:4px; color:inherit; }
   table.verify input:focus { border-color:var(--brand); background:var(--surface); outline:none; }
+  /* adjusted rows in the audit table get a warm highlight + inline-start accent */
+  table.verify tr.adj-row { background:var(--verify-soft); }
+  table.verify tr.adj-row > td:first-child { border-inline-start:3px solid var(--verify); }
   .verify-scroll { max-height:320px; overflow:auto; border:1px solid var(--border); border-radius:var(--r-sm); }
+  .field-hint { display:block; font-size:0.68rem; color:var(--ink-4); margin-top:4px; }
 
   .step-actions { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
   .btn.good { background:var(--good); color:#fff; border-color:var(--good); }
@@ -478,10 +482,12 @@
     <div class="field">
       <label data-i18n="asikFile">קובץ אסיק (xlsx)</label>
       <input type="file" id="runFile" accept=".xlsx,.xls" />
+      <small class="field-hint" data-i18n="asikFileHint">דוח הצריכה שהופק מ-ASIK</small>
     </div>
     <div class="field">
       <label data-i18n="solarFile">קובץ סולארי (xlsx) · רשות</label>
       <input type="file" id="runSolarFile" accept=".xlsx,.xls" />
+      <small class="field-hint" data-i18n="solarFileHint">קובץ הסולאר — ניתן להמשיך בלעדיו</small>
     </div>
     <div id="newRunErr"></div>
     <div class="modal-actions">
@@ -539,6 +545,7 @@
       automations:'אוטומציות', noAutomations:'אין אוטומציות רשומות', workspace:'מרחב עבודה',
       selectAutomation:'בחר אוטומציה', selectFromMenu:'בחר אוטומציה מהתפריט',
       newRun:'ריצה חדשה', createRun:'צור ריצה', cancel:'ביטול',
+      asikFileHint:'דוח הצריכה שהופק מ-ASIK', solarFileHint:'קובץ הסולאר — ניתן להמשיך בלעדיו',
       docSub:'אוטומציה מפוקחת — כל צעד עוצר לאישורך לפני שהבא מתחיל. שום דבר לא קורה בלי האישור שלך.',
       tabRuns:'ריצות', tabCurrent:'ריצה נוכחית', tabFiles:'קבצים', tabContext:'הקשר',
       setPersonal:'העדפות אישיות לסביבת העבודה.', appearance:'מראה', light:'בהיר', dark:'כהה',
@@ -569,6 +576,7 @@
       automations:'Automations', noAutomations:'No automations registered', workspace:'Workspace',
       selectAutomation:'Select automation', selectFromMenu:'Select an automation from the menu',
       newRun:'New run', createRun:'Create run', cancel:'Cancel',
+      asikFileHint:'Consumption report exported from ASIK', solarFileHint:'Solar file — optional, you can skip it',
       docSub:'Supervised automation — every step pauses for your approval before the next begins. Nothing happens without your sign-off.',
       tabRuns:'Runs', tabCurrent:'Current run', tabFiles:'Files', tabContext:'Context',
       setPersonal:'Personal workspace preferences.', appearance:'Appearance', light:'Light', dark:'Dark',
@@ -860,9 +868,9 @@
     const flagged = new Set(step.flagged_columns || []);
     let verifyHtml = '';
     if(rows.length){
-      const cols = Array.from(rows.reduce((set,r) => { Object.keys(r).forEach(k => set.add(k)); return set; }, new Set())).filter(c => c !== 'row_id');
+      const cols = Array.from(rows.reduce((set,r) => { Object.keys(r).forEach(k => set.add(k)); return set; }, new Set())).filter(c => c !== 'row_id' && !c.startsWith('_'));
       verifyHtml = `<h3>${esc(t('rowsToVerify'))} (${rows.length})</h3><div class="verify-scroll"><table class="verify"><thead><tr>${cols.map(col => `<th class="${flagged.has(col)?'flagged':''}">${esc(col)}</th>`).join('')}</tr></thead><tbody>${
-        rows.map((r,i) => { const rid = String(r.row_id != null ? r.row_id : i); return '<tr>' + cols.map(col => `<td class="${flagged.has(col)?'flagged':''}"><input data-rid="${esc(rid)}" data-col="${esc(col)}" data-old="${esc(r[col])}" value="${esc(r[col])}"></td>`).join('') + '</tr>'; }).join('')
+        rows.map((r,i) => { const rid = String(r.row_id != null ? r.row_id : i); const adjCls = r._adjusted ? 'adj-row' : ''; return `<tr class="${adjCls}">` + cols.map(col => `<td class="${flagged.has(col)?'flagged':''}"><input data-rid="${esc(rid)}" data-col="${esc(col)}" data-old="${esc(r[col])}" value="${esc(r[col])}"></td>`).join('') + '</tr>'; }).join('')
       }</tbody></table></div>`;
     }
     host.innerHTML = `<h3>${esc(t('step'))} ${step.step_index}: ${esc(step.name)} <span class="status-tag status-${step.status==='good'?'completed':step.status==='verify'?'paused':(step.status==='bad'||step.status==='aborted')?'aborted':'running'}">${esc(step.status)}</span></h3>
@@ -872,11 +880,12 @@
       ${laObjs.map(([k,v]) => `<div class="k" style="font-size:.62rem;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:6px 0 2px">${esc(_label(k))}</div><pre class="la-json">${esc(JSON.stringify(v,null,2))}</pre>`).join('')}
       ${verifyHtml}
       ${terminal ? _terminalBanner(runStatus) : `<div class="step-actions">
-        <button class="btn" id="execBtn">▶ ${esc(t('rerun'))}</button>
-        <button class="btn good" id="goodBtn">✓ ${esc(t('approve'))}</button>
-        ${rows.length ? `<button class="btn verify" id="verifyBtn">✎ ${esc(t('saveEditsRun'))}</button>` : ''}
+        <button class="btn ghost" id="execBtn">▶ ${esc(t('rerun'))}</button>
         ${rows.length && allowRemember ? `<label style="display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--ink-2)"><input type="checkbox" id="rememberEdits"> ${esc(t('rememberAssign'))}</label>` : ''}
+        ${rows.length ? `<button class="btn verify" id="verifyBtn">✎ ${esc(t('saveEditsRun'))}</button>` : ''}
+        <span style="flex:1"></span>
         <button class="btn bad" id="rejBtn">✕ ${esc(t('reject'))}</button>
+        <button class="btn good lg" id="goodBtn">✓ ${esc(t('approve'))}</button>
       </div>`}`;
     if(terminal){ _wireTerminal(); return; }
     S.edits = [];
@@ -1019,6 +1028,10 @@
     const a = S.automations.find(x => x.key === S.activeKey);
     $('newRunAuto').textContent = a ? (a.name + ' · ' + a.customer) : S.activeKey;
     $('priorPromptArea').innerHTML = ''; $('newRunErr').innerHTML = '';
+    if(!$('runPeriod').value){
+      const now = new Date();
+      $('runPeriod').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    }
     newRunBack.setAttribute('data-open','');
   }
   function closeNewRun(){ newRunBack.removeAttribute('data-open'); }
