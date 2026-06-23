@@ -366,24 +366,6 @@
 
   <aside class="sidebar">
     <div class="side-scroll">
-      <button class="new-btn" id="newBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
-        ריצה חדשה
-      </button>
-
-      <div class="nav-group">
-        <div class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
-          סקירה כללית
-        </div>
-        <div class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l7-4 7 4V3z"></path></svg>
-          ריצות <span class="count">0</span>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
       <div id="autoNav"><div class="nav-label">אוטומציות</div><div class="muted" style="padding:8px 10px;font-size:0.8rem">טוען…</div></div>
     </div>
 
@@ -399,10 +381,6 @@
         <h1 class="doc-title" id="docTitle">בחר אוטומציה</h1>
         <span class="pill" id="statusPill"><span class="pdot"></span>—</span>
         <div class="spacer"></div>
-        <button class="btn" id="refreshBtn" title="Refresh">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"></path><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"></path></svg>
-          רענן
-        </button>
         <button class="btn primary" id="newRunBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
           ריצה חדשה
@@ -798,21 +776,32 @@
     const inputCells = Object.entries(inputs).map(([k,v]) =>
       `<div class="la-cell"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('') || '<span class="muted">—</span>';
     const data = ctx.data || {};
-    // Highlight a few review-relevant fields up top; full blob below.
+    // Highlight a few review-relevant fields up top.
     const HILITE = ['asik_period','consumption_rows','parse_anomaly_count','solar_rows','group_summary','reconcile'];
     const present = HILITE.filter(k => k in data);
     const scalarCells = present.filter(k => typeof data[k] !== 'object' || data[k] === null)
       .map(k => `<div class="la-cell"><div class="k">${esc(k)}</div><div class="v">${esc(data[k])}</div></div>`).join('');
     const objBlocks = present.filter(k => typeof data[k] === 'object' && data[k] !== null)
       .map(k => `<div class="k" style="font-size:.62rem;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:10px 0 2px">${esc(k)}</div><pre class="la-json">${esc(JSON.stringify(data[k],null,2))}</pre>`).join('');
+    // Compact overview of every data key. Large row-arrays (consumption,
+    // split_*) are collapsed to a count — dumping them verbatim is what froze
+    // the page (the full context is hundreds of KB to several MB).
+    const overview = Object.keys(data).map(k => {
+      const v = data[k];
+      let summ;
+      if(Array.isArray(v)) summ = `<span class="muted">${v.length} רשומות</span>`;
+      else if(v !== null && typeof v === 'object') summ = `<span class="muted">{${Object.keys(v).length} שדות}</span>`;
+      else { const s = String(v); summ = esc(s.length > 80 ? s.slice(0,80)+'…' : s); }
+      return `<tr><td class="k" style="white-space:nowrap;padding:3px 10px 3px 0">${esc(k)}</td><td>${summ}</td></tr>`;
+    }).join('');
     c.innerHTML = `<div style="max-width:1000px;margin:6px auto">
       <h3 style="margin:4px 0 8px">קלטים (inputs)</h3>
       <div class="la-grid">${inputCells}</div>
       <h3 style="margin:18px 0 8px">שדות מפתח</h3>
       <div class="la-grid">${scalarCells || '<span class="muted">—</span>'}</div>
       ${objBlocks}
-      <h3 style="margin:18px 0 8px">הקשר מלא (JSON)</h3>
-      <pre class="la-json" style="max-height:420px">${esc(JSON.stringify(data,null,2))}</pre>
+      <h3 style="margin:18px 0 8px">כל שדות ההקשר</h3>
+      <table style="font-size:.8rem;border-collapse:collapse"><tbody>${overview || '<tr><td class="muted">—</td></tr>'}</tbody></table>
     </div>`;
   }
 
@@ -877,7 +866,6 @@
   }
   function closeNewRun(){ newRunBack.removeAttribute('data-open'); }
   $('newRunBtn').addEventListener('click', openNewRun);
-  $('newBtn').addEventListener('click', openNewRun);
   $('newRunCancel').addEventListener('click', closeNewRun);
   newRunBack.addEventListener('click', e => { if(e.target === newRunBack) closeNewRun(); });
 
@@ -912,8 +900,7 @@
   }
   $('newRunSubmit').addEventListener('click', () => submitNewRun(null));
 
-  // ---------- refresh + boot ----------
-  $('refreshBtn').addEventListener('click', async () => { await refreshData(); render(); showToast('רוענן'); });
+  // ---------- boot ----------
   loadAutomations();
 </script>
 </body>
