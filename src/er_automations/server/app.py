@@ -127,7 +127,13 @@ def _register_routes(app: FastAPI) -> None:
             rows = conn.execute(
                 "SELECT id, key, name, customer FROM automation ORDER BY key"
             ).fetchall()
-            return [dict(r) for r in rows]
+            result = []
+            for r in rows:
+                d = dict(r)
+                manifest = app.state.manifests.get(d["key"])
+                d["steps"] = [s.name for s in manifest] if manifest else []
+                result.append(d)
+            return result
         finally:
             conn.close()
 

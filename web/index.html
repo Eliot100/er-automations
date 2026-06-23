@@ -288,19 +288,37 @@
   /* minmax(0,1fr) lets the detail column shrink below its content's intrinsic
      width so inner blocks (la-json, verify table) scroll instead of forcing
      the whole page to overflow horizontally. */
-  .run-wrap { display:grid; grid-template-columns:280px minmax(0,1fr); gap:20px; align-items:start; max-width:1100px; margin:6px auto; }
+  /* Compact steps rail (180 px) — rest of width goes to the data table */
+  .run-wrap { display:grid; grid-template-columns:180px minmax(0,1fr); gap:14px; align-items:start; margin:6px auto; }
   @media (max-width:880px){ .run-wrap { grid-template-columns:1fr; } }
-  .steps-rail { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:10px; box-shadow:var(--sh-1); }
-  .step-item { position:relative; display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; padding:10px 12px; border-radius:var(--r-sm); cursor:pointer; }
+  .steps-rail { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:8px; box-shadow:var(--sh-1); }
+  .step-item { position:relative; display:flex; align-items:center; gap:7px; padding:7px 9px; border-radius:var(--r-sm); cursor:pointer; overflow:hidden; }
   .step-item:hover { background:var(--surface-3); }
   .step-item.active { background:var(--brand-soft); }
-  /* direction-aware accent bar on the active step (inline-start works in RTL+LTR) */
-  .step-item.active::before { content:''; position:absolute; inset-inline-start:0; top:7px; bottom:7px; width:3px; border-radius:2px; background:var(--brand); }
-  .step-item .pip { width:10px; height:10px; border-radius:50%; background:var(--ink-4); flex:0 0 auto; }
+  .step-item.active::before { content:''; position:absolute; inset-inline-start:0; top:6px; bottom:6px; width:3px; border-radius:2px; background:var(--brand); }
+  .step-item .pip { width:9px; height:9px; border-radius:50%; background:var(--ink-4); flex:0 0 auto; }
+  /* s-pending = not yet run (gray); s-good = done/approved (green); s-verify = needs review (orange); s-bad/aborted = red */
+  .pip.s-pending { background:var(--ink-4); }
   .pip.s-good { background:var(--good); } .pip.s-verify { background:var(--verify); }
   .pip.s-bad, .pip.s-aborted { background:var(--bad); } .pip.s-running { background:var(--brand); }
-  .step-item .sname { font-size:0.82rem; font-weight:600; }
-  .step-item .sattempt { font-family:var(--mono); font-size:0.62rem; color:var(--ink-4); }
+  .step-item .sname { font-size:0.77rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
+  /* A done step shows a green check dot. */
+  .step-item .pip.done { width:15px; height:15px; background:var(--good); color:#fff; display:grid; place-items:center; font-size:9px; font-weight:900; line-height:1; border-radius:50%; }
+  /* Collapsible rail header = the human-readable automation name. */
+  .rail-head { display:flex; align-items:center; gap:7px; width:100%; background:transparent; border:0; padding:4px 8px 8px; text-align:start; color:var(--ink); }
+  .rail-head:hover { color:var(--brand); }
+  .rail-head .chev { width:13px; height:13px; color:var(--ink-3); transition:transform .15s; flex:0 0 auto; }
+  .rail-head:hover .chev { color:var(--brand); }
+  .steps-rail.collapsed .rail-head .chev { transform:rotate(-90deg); }
+  .rail-head .rail-title { font-family:var(--sans); font-size:0.78rem; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
+  .steps-rail.collapsed .rail-body { display:none; }
+  /* Excel-style tab bar above a tabbed verify table */
+  .vtabs { display:flex; gap:0; margin-bottom:0; border-bottom:1px solid var(--border-2); }
+  .vtab { padding:5px 14px; border:1px solid var(--border-2); border-bottom:none; border-radius:var(--r-sm) var(--r-sm) 0 0; background:var(--surface-3); color:var(--ink-3); font-size:0.76rem; font-weight:600; cursor:pointer; margin-bottom:-1px; }
+  .vtab:hover { background:var(--surface-2); color:var(--ink); }
+  .vtab.active { background:var(--surface); color:var(--ink); border-bottom:1px solid var(--surface); z-index:1; position:relative; }
+  .vtab-count { font-family:var(--mono); font-size:0.66rem; background:var(--surface-3); border-radius:99px; padding:1px 5px; margin-inline-start:5px; color:var(--ink-4); }
+  .vtab.active .vtab-count { background:var(--brand-soft); color:var(--brand-ink); }
 
   .detail-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:20px 22px; box-shadow:var(--sh-1); }
   .detail-card h3 { margin:0 0 10px; font-size:0.95rem; }
@@ -366,21 +384,14 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 L4 14 L11 14 L10 22 L20 10 L13 10 Z"></path></svg>
     </div>
     <span class="name">ER&nbsp;Automations</span>
-    <span class="env">ops</span>
   </div>
 
   <div class="topbar">
     <nav class="crumbs" id="crumbs"><span class="muted">—</span></nav>
     <div class="spacer"></div>
-    <button class="icon-btn" data-i18n-title="notifications" title="התראות" aria-label="התראות">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg>
-    </button>
     <button class="icon-btn" id="settingsBtn" data-i18n-title="settings" title="הגדרות" aria-label="הגדרות">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1.1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3 1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"></path></svg>
     </button>
-    <div class="avatar" data-i18n-title="user" title="משתמש">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path></svg>
-    </div>
   </div>
 
   <aside class="sidebar">
@@ -388,10 +399,6 @@
       <div id="autoNav"><div class="nav-label" data-i18n="automations">אוטומציות</div><div class="muted" style="padding:8px 10px;font-size:0.8rem" data-i18n="loading">טוען…</div></div>
     </div>
 
-    <div class="side-foot">
-      <div class="org" id="orgInitial">ER</div>
-      <div><div class="org-name" id="orgName">ER Automations</div><div class="org-sub" id="orgSub" data-i18n="workspace">מרחב עבודה</div></div>
-    </div>
   </aside>
 
   <main class="main">
@@ -570,6 +577,8 @@
       priorExist:'ריצות קודמות קיימות לתקופה זו. מה לעשות?', removePrior:'מחק קודמות',
       useExisting:'השתמש בקיים', ignore:'התעלם', runCreated:'נוצרה', error:'שגיאה',
       st_running:'רץ', st_paused:'ממתין', st_completed:'הושלם', st_aborted:'בוטל',
+      sx_good:'הושלם', sx_verify:'לאימות', sx_running:'רץ', sx_bad:'נכשל', sx_aborted:'בוטל',
+      ready:'מוכן', collapseSteps:'כווץ/הרחב צעדים',
     },
     en: {
       notifications:'Notifications', settings:'Settings', user:'User', loading:'Loading…',
@@ -601,8 +610,42 @@
       priorExist:'Prior runs exist for this period. What to do?', removePrior:'Delete prior',
       useExisting:'Use existing', ignore:'Ignore', runCreated:'created', error:'Error',
       st_running:'Running', st_paused:'Awaiting', st_completed:'Completed', st_aborted:'Aborted',
+      sx_good:'Done', sx_verify:'Review', sx_running:'Running', sx_bad:'Failed', sx_aborted:'Aborted',
+      ready:'Ready', collapseSteps:'Collapse / expand steps',
     },
   };
+  // Step display labels per language. The backend ships stable English step
+  // KEYS (ingest, parse_consumption, …); these are UI chrome, so we localize
+  // them here — the Excel output and reference files are untouched.
+  const STEP_LABELS = {
+    he: {
+      // Monthly electricity (kfar_hanasi.electricity_monthly)
+      ingest:'קליטת אסיק', parse_consumption:'בדיקת צריכה', apply_adjustments:'התאמות מיוחדות',
+      group_split:'חלוקה לקבוצות', solar_monthly:'סולארי חודשי', generate_outputs:'הפקת קבצים',
+      // Solar monthly (kfar_hanasi.solar_monthly)
+      ingest_solar:'קליטת נתוני סולארי', confirm_tariffs:'אישור תעריפים', generate_solar_report:'הפקת דוח סולארי חודשי',
+      // Electricity annual (kfar_hanasi.electricity_annual)
+      select_period:'בחירת שנה', aggregate_monthly_runs:'ריכוז נתונים חודשיים', generate_annual_groups:'סיכום שנתי לפי קבוצות',
+      // Energy balance (kfar_hanasi.energy_balance_annual)
+      enter_company_figures:'הזנת נתוני חברת חשמל', compare_meters:'השוואת מדדים', generate_balance_sheet:'הפקת מאזן אנרגטי',
+      // Solar annual (kfar_hanasi.solar_annual)
+      aggregate_solar_monthly:'ריכוז סולארי חודשי', generate_solar_annual_summary:'סיכום סולארי שנתי',
+    },
+    en: {
+      // Monthly electricity (kfar_hanasi.electricity_monthly)
+      ingest:'Ingest', parse_consumption:'Parse consumption', apply_adjustments:'Adjustments',
+      group_split:'Group split', solar_monthly:'Solar monthly', generate_outputs:'Generate files',
+      // Solar monthly (kfar_hanasi.solar_monthly)
+      ingest_solar:'Ingest solar data', confirm_tariffs:'Confirm tariffs', generate_solar_report:'Generate solar monthly report',
+      // Electricity annual (kfar_hanasi.electricity_annual)
+      select_period:'Select year', aggregate_monthly_runs:'Aggregate monthly runs', generate_annual_groups:'Annual group summary',
+      // Energy balance (kfar_hanasi.energy_balance_annual)
+      enter_company_figures:'Enter utility figures', compare_meters:'Compare meters', generate_balance_sheet:'Generate balance sheet',
+      // Solar annual (kfar_hanasi.solar_annual)
+      aggregate_solar_monthly:'Aggregate monthly solar', generate_solar_annual_summary:'Solar annual summary',
+    },
+  };
+  const stepName = key => { const m = STEP_LABELS[prefs.lang] || STEP_LABELS.he; return m[key] || STEP_LABELS.he[key] || _label(key); };
   function t(key, ...args){
     const tbl = I18N[prefs.lang] || I18N.he;
     let s = (tbl[key] != null ? tbl[key] : (I18N.he[key] != null ? I18N.he[key] : key));
@@ -668,7 +711,8 @@
   // for live-action / context *field names*, never for data values or the
   // Hebrew column headers in the verify table.
   const _label = k => String(k).replace(/_/g, ' ');
-  const statusHe = s => { const v = t('st_'+s); return v === 'st_'+s ? s : v; };
+  const statusLabel = s => { const v = t('st_'+s); return v === 'st_'+s ? s : v; };
+  const stepStatusLabel = s => { const v = t('sx_'+s); return v === 'sx_'+s ? s : v; };
 
   async function getJSON(u){ const r = await fetch(u); if(!r.ok) throw new Error(r.status+' '+await r.text()); return r.json(); }
   async function postJSON(u, body){
@@ -677,7 +721,7 @@
     return r.json().catch(() => ({}));
   }
 
-  const S = { automations:[], activeKey:null, runs:[], runsByKey:{}, activeRunId:null, runDetail:null, activeStepIdx:0, edits:[], tab:'runs', artifacts:[], context:null };
+  const S = { automations:[], activeKey:null, runs:[], runsByKey:{}, activeRunId:null, runDetail:null, activeStepIdx:0, edits:[], tab:'runs', artifacts:[], context:null, railOpen:true };
 
   function showErr(e){ const c = $('canvas'); const b = document.createElement('div'); b.className='err-banner'; b.textContent = t('error') + ': ' + (e && e.message || e); c.prepend(b); setTimeout(()=>b.remove(), 7000); console.error(e); }
   function setStatus(text){ $('statusPill').innerHTML = '<span class="pdot"></span>' + esc(text); }
@@ -719,7 +763,10 @@
     S.activeKey = key; S.activeRunId = null; S.runDetail = null;
     const a = S.automations.find(x => x.key === key);
     $('docTitle').textContent = a ? a.name : key;
-    setStatus(a ? a.customer : '—');
+    // Status pill reflects run state, not the customer — the customer already
+    // shows in the breadcrumb and the sidebar group, so repeating it here was
+    // just noise. "Ready" until a run is opened.
+    setStatus(a ? t('ready') : '—');
     updateBreadcrumb(a);
     renderSidebar();
     await loadRuns();
@@ -732,7 +779,7 @@
     S.activeStepIdx = S.runDetail.run.current_step_index ?? 0;
     await loadArtifacts();
     await loadContext();
-    setStatus(statusHe(S.runDetail.run.status));
+    setStatus(statusLabel(S.runDetail.run.status));
     setActiveTab('run');
   }
 
@@ -765,13 +812,7 @@
       </div>`).join('');
     nav.querySelectorAll('.auto-row').forEach(r => r.addEventListener('click', () => selectAutomation(r.dataset.key)));
 
-    // Update footer to show the active customer name
     const active = S.automations.find(a => a.key === S.activeKey);
-    const cust = active ? active.customer : 'ER Automations';
-    const initial = [...cust].find(c => /\p{L}/u.test(c)) || 'E';
-    $('orgInitial').textContent = initial;
-    $('orgName').textContent = cust;
-    $('orgSub').textContent = active ? active.key.split('.')[0] + ' · ops' : t('workspace');
   }
 
   // Re-apply the header chrome (title, breadcrumb, status pill, sidebar) from
@@ -782,8 +823,8 @@
     const a = S.automations.find(x => x.key === S.activeKey);
     $('docTitle').textContent = a ? a.name : t('selectAutomation');
     updateBreadcrumb(a);
-    if(S.activeRunId != null && S.runDetail) setStatus(statusHe(S.runDetail.run.status));
-    else setStatus(a ? a.customer : '—');
+    if(S.activeRunId != null && S.runDetail) setStatus(statusLabel(S.runDetail.run.status));
+    else setStatus(a ? t('ready') : '—');
     renderSidebar();
   }
 
@@ -800,7 +841,7 @@
     if(!S.runs.length){ c.innerHTML = `<div class="center-msg">${esc(t('noRunsYet'))}<br>${esc(t('clickNewRun'))} <b>${esc(t('newRun'))}</b></div>`; return; }
     c.innerHTML = '<div class="run-list">' + S.runs.map(r => `
       <button class="run-row" data-id="${r.id}">
-        <span class="status-tag status-${esc(r.status)}">${statusHe(r.status)}</span>
+        <span class="status-tag status-${esc(r.status)}">${statusLabel(r.status)}</span>
         <span class="run-main">
           <span class="rperiod">${esc(r.period)}</span>
           <span class="rwhen">${esc(r.created_at||'')} · ${esc(t('step'))} ${r.current_step_index}</span>
@@ -813,16 +854,53 @@
   function renderRun(c){
     if(!S.runDetail){ c.innerHTML = `<div class="center-msg">${esc(t('selectRunFrom'))} <b>${esc(t('tabRuns'))}</b></div>`; return; }
     const d = S.runDetail, steps = d.steps || [];
-    const rail = steps.length ? steps.map(s => `
-      <div class="step-item ${s.step_index===S.activeStepIdx?'active':''}" data-idx="${s.step_index}">
-        <span class="pip s-${esc(s.status)}"></span>
-        <span class="sname">${s.step_index}. ${esc(s.name)}</span>
-        <span class="sattempt">#${s.attempt_no}</span>
+    const cur = d.run.current_step_index ?? 0;
+    const a = S.automations.find(x => x.key === S.activeKey);
+
+    // Full step list from the manifest (API now returns a.steps); fall back to
+    // executed steps only so the rail still renders without manifest data.
+    const allStepKeys = (a && a.steps && a.steps.length) ? a.steps : steps.map(s => s.name);
+    const stepFor = idx => steps.find(s => s.step_index === idx);
+
+    // Map each step index to a dot class + optional ✓ mark.
+    const railPip = idx => {
+      const s = stepFor(idx);
+      if (!s) return '<span class="pip s-pending"></span>';
+      const done = s.step_index < cur || s.status === 'good';
+      if (done) return '<span class="pip done">✓</span>';
+      if (s.status === 'verify') return '<span class="pip s-verify"></span>';
+      if (s.status === 'bad' || s.status === 'aborted') return '<span class="pip s-bad"></span>';
+      if (s.status === 'running') return '<span class="pip s-running"></span>';
+      return '<span class="pip s-pending"></span>';
+    };
+
+    const rail = allStepKeys.length ? allStepKeys.map((key, idx) => `
+      <div class="step-item ${idx===S.activeStepIdx?'active':''}" data-idx="${idx}" title="${esc(stepName(key))}">
+        ${railPip(idx)}
+        <span class="sname">${esc(stepName(key))}</span>
       </div>`).join('') : `<div class="muted" style="padding:10px;font-size:.8rem">${esc(t('noStepsRun'))}</div>`;
+
+    // Rail header shows the human-readable automation name, not the technical key.
+    const displayName = a ? a.name : t('stepsHdr');
+    const chevSvg = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>';
     c.innerHTML = `<div class="run-wrap">
-      <div class="steps-rail"><div class="nav-label">${esc(t('stepsHdr'))} · ${esc(d.run.period)} · ${statusHe(d.run.status)}</div>${rail}</div>
+      <div class="steps-rail${S.railOpen===false?' collapsed':''}">
+        <button class="rail-head" id="railToggle" aria-expanded="${S.railOpen!==false}" title="${esc(t('collapseSteps'))}">
+          ${chevSvg}<span class="rail-title">${esc(displayName)}</span>
+        </button>
+        <div class="rail-body" id="railBody">
+          ${rail}
+        </div>
+      </div>
       <div class="detail-card" id="stepDetail"></div>
     </div>`;
+    const railToggle = $('railToggle');
+    if(railToggle) railToggle.addEventListener('click', () => {
+      S.railOpen = S.railOpen === false;
+      const box = c.querySelector('.steps-rail');
+      box.classList.toggle('collapsed', S.railOpen === false);
+      railToggle.setAttribute('aria-expanded', String(S.railOpen !== false));
+    });
     c.querySelectorAll('.step-item').forEach(it => it.addEventListener('click', () => { S.activeStepIdx = parseInt(it.dataset.idx,10); renderRun($('canvas')); }));
     renderStepDetail($('stepDetail'), steps.find(s => s.step_index === S.activeStepIdx));
   }
@@ -869,11 +947,16 @@
     let verifyHtml = '';
     if(rows.length){
       const cols = Array.from(rows.reduce((set,r) => { Object.keys(r).forEach(k => set.add(k)); return set; }, new Set())).filter(c => c !== 'row_id' && !c.startsWith('_'));
-      verifyHtml = `<h3>${esc(t('rowsToVerify'))} (${rows.length})</h3><div class="verify-scroll"><table class="verify"><thead><tr>${cols.map(col => `<th class="${flagged.has(col)?'flagged':''}">${esc(col)}</th>`).join('')}</tr></thead><tbody>${
-        rows.map((r,i) => { const rid = String(r.row_id != null ? r.row_id : i); const adjCls = r._adjusted ? 'adj-row' : ''; return `<tr class="${adjCls}">` + cols.map(col => `<td class="${flagged.has(col)?'flagged':''}"><input data-rid="${esc(rid)}" data-col="${esc(col)}" data-old="${esc(r[col])}" value="${esc(r[col])}"></td>`).join('') + '</tr>'; }).join('')
+      const tabKeys = [...new Set(rows.map(r => r._tab).filter(Boolean))];
+      const tabBar = tabKeys.length > 1 ? `<div class="vtabs">${tabKeys.map((k,i) => {
+        const cnt = rows.filter(r => r._tab === k).length;
+        return `<button class="vtab${i===0?' active':''}" data-vtab="${esc(k)}">${esc(k)}<span class="vtab-count">${cnt}</span></button>`;
+      }).join('')}</div>` : '';
+      verifyHtml = `<h3>${esc(t('rowsToVerify'))} (${rows.length})</h3>${tabBar}<div class="verify-scroll"><table class="verify"><thead><tr>${cols.map(col => `<th class="${flagged.has(col)?'flagged':''}">${esc(col)}</th>`).join('')}</tr></thead><tbody>${
+        rows.map((r,i) => { const rid = String(r.row_id != null ? r.row_id : i); const adjCls = r._adjusted ? 'adj-row' : ''; const vtab = r._tab ? `data-vtab="${esc(r._tab)}"` : ''; const hidden = (tabKeys.length>1 && tabKeys.indexOf(r._tab)>0) ? ' style="display:none"' : ''; return `<tr class="${adjCls}" ${vtab}${hidden}>` + cols.map(col => `<td class="${flagged.has(col)?'flagged':''}"><input data-rid="${esc(rid)}" data-col="${esc(col)}" data-old="${esc(r[col])}" value="${esc(r[col])}"></td>`).join('') + '</tr>'; }).join('')
       }</tbody></table></div>`;
     }
-    host.innerHTML = `<h3>${esc(t('step'))} ${step.step_index}: ${esc(step.name)} <span class="status-tag status-${step.status==='good'?'completed':step.status==='verify'?'paused':(step.status==='bad'||step.status==='aborted')?'aborted':'running'}">${esc(step.status)}</span></h3>
+    host.innerHTML = `<h3>${esc(t('step'))} ${step.step_index}: ${esc(stepName(step.name))} <span class="status-tag status-${step.status==='good'?'completed':step.status==='verify'?'paused':(step.status==='bad'||step.status==='aborted')?'aborted':'running'}">${esc(stepStatusLabel(step.status))}</span></h3>
       <div class="step-meta"><span class="attempt">${esc(t('attempt'))} #${step.attempt_no}</span>${step.created_at ? `<span>${esc(t('executedAt'))} ${esc(_clockFromTs(step.created_at))}</span>` : ''}</div>
       ${step.notes ? `<p class="muted">${esc(step.notes)}</p>` : ''}
       <div class="la-grid">${laCells || '<span class="muted">—</span>'}</div>
@@ -889,6 +972,13 @@
       </div>`}`;
     if(terminal){ _wireTerminal(); return; }
     S.edits = [];
+    host.querySelectorAll('.vtab').forEach(btn => btn.addEventListener('click', () => {
+      host.querySelectorAll('.vtab').forEach(b => b.classList.toggle('active', b === btn));
+      const key = btn.dataset.vtab;
+      host.querySelectorAll('table.verify tbody tr').forEach(tr => {
+        tr.style.display = (!tr.dataset.vtab || tr.dataset.vtab === key) ? '' : 'none';
+      });
+    }));
     host.querySelectorAll('table.verify input').forEach(inp => inp.addEventListener('input', () => {
       const rid = inp.dataset.rid, col = inp.dataset.col;
       S.edits = S.edits.filter(e => !(e.row_id === rid && e.column === col));
@@ -1003,7 +1093,7 @@
   let _rejectStep = null;
   function rejectStep(step){
     _rejectStep = step;
-    $('rejectStepName').textContent = `${t('step')} ${step.step_index}: ${step.name}`;
+    $('rejectStepName').textContent = `${t('step')} ${step.step_index}: ${stepName(step.name)}`;
     $('rejectNotes').value = '';
     rejectBack.setAttribute('data-open','');
     setTimeout(() => $('rejectNotes').focus(), 0);
