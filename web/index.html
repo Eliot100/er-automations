@@ -107,7 +107,7 @@
   .nav-item.active svg { color:var(--brand); }
   .divider { height:1px; background:var(--border); margin:12px 6px; }
   .auto-row {
-    display:grid; grid-template-columns:auto 1fr auto; gap:9px; align-items:center;
+    display:grid; grid-template-columns:auto minmax(0,1fr); gap:9px; align-items:center;
     padding:8px 10px; border-radius:var(--r-sm); cursor:pointer;
   }
   .auto-row:hover { background:var(--surface-3); }
@@ -115,8 +115,10 @@
   .auto-row .dot { width:7px; height:7px; border-radius:50%; background:var(--ink-4); }
   .auto-row.is-review .dot { background:var(--verify); }
   .auto-row.is-live .dot { background:var(--good); }
-  .auto-row .t { font-size:0.8125rem; font-weight:500; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .auto-row .meta { font-family:var(--mono); font-size:0.625rem; color:var(--ink-4); }
+  .auto-row .body { min-width:0; }
+  /* Name leads (truncates if long); the technical key is a demoted second line. */
+  .auto-row .t { display:block; font-size:0.8125rem; font-weight:500; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .auto-row .meta { display:block; font-family:var(--mono); font-size:0.625rem; color:var(--ink-4); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .auto-row.active .t { font-weight:600; }
   .side-foot { border-top:1px solid var(--border); padding:10px 14px; display:flex; align-items:center; gap:9px; }
   .side-foot .org { width:26px; height:26px; border-radius:7px; background:var(--ink); color:var(--surface); display:grid; place-items:center; font-weight:800; font-size:0.6875rem; }
@@ -124,7 +126,7 @@
   .side-foot .org-sub { font-size:0.65625rem; color:var(--ink-3); }
   .side-foot .chev { margin-left:auto; color:var(--ink-4); }
 
-  .main { grid-area:main; overflow:auto; min-height:0; display:flex; flex-direction:column; }
+  .main { grid-area:main; overflow:auto; min-height:0; min-width:0; display:flex; flex-direction:column; }
   .doc-head { background:var(--surface); border-bottom:1px solid var(--border); padding:18px 30px 0; }
   .doc-title-row { display:flex; align-items:center; gap:12px; }
   .doc-title {
@@ -267,13 +269,14 @@
   /* run list */
   .run-list { max-width:880px; margin:8px auto; display:flex; flex-direction:column; gap:8px; }
   .run-row {
-    display:grid; grid-template-columns:auto 1fr auto auto; gap:14px; align-items:center;
+    display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center;
     background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
     padding:12px 16px; cursor:pointer; box-shadow:var(--sh-1); text-align:start;
   }
   .run-row:hover { border-color:var(--brand); box-shadow:var(--sh-2); }
+  .run-row .run-main { display:flex; flex-direction:column; gap:2px; min-width:0; }
   .run-row .rid { font-family:var(--mono); font-size:0.72rem; color:var(--ink-4); }
-  .run-row .rperiod { font-weight:700; font-size:0.9rem; }
+  .run-row .rperiod { font-weight:700; font-size:0.95rem; }
   .run-row .rwhen { font-size:0.72rem; color:var(--ink-3); }
   .status-tag { font-size:0.7rem; font-weight:700; padding:3px 9px; border-radius:99px; border:1px solid var(--border-2); }
   .status-running { color:var(--brand); background:var(--brand-soft); border-color:transparent; }
@@ -282,11 +285,17 @@
   .status-aborted { color:var(--bad); background:#fbeaea; border-color:transparent; }
 
   /* run detail: two columns (steps rail + detail) */
-  .run-wrap { display:grid; grid-template-columns:280px 1fr; gap:20px; align-items:start; max-width:1100px; margin:6px auto; }
+  /* minmax(0,1fr) lets the detail column shrink below its content's intrinsic
+     width so inner blocks (la-json, verify table) scroll instead of forcing
+     the whole page to overflow horizontally. */
+  .run-wrap { display:grid; grid-template-columns:280px minmax(0,1fr); gap:20px; align-items:start; max-width:1100px; margin:6px auto; }
+  @media (max-width:880px){ .run-wrap { grid-template-columns:1fr; } }
   .steps-rail { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:10px; box-shadow:var(--sh-1); }
-  .step-item { display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; padding:10px 12px; border-radius:var(--r-sm); cursor:pointer; }
+  .step-item { position:relative; display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; padding:10px 12px; border-radius:var(--r-sm); cursor:pointer; }
   .step-item:hover { background:var(--surface-3); }
   .step-item.active { background:var(--brand-soft); }
+  /* direction-aware accent bar on the active step (inline-start works in RTL+LTR) */
+  .step-item.active::before { content:''; position:absolute; inset-inline-start:0; top:7px; bottom:7px; width:3px; border-radius:2px; background:var(--brand); }
   .step-item .pip { width:10px; height:10px; border-radius:50%; background:var(--ink-4); flex:0 0 auto; }
   .pip.s-good { background:var(--good); } .pip.s-verify { background:var(--verify); }
   .pip.s-bad, .pip.s-aborted { background:var(--bad); } .pip.s-running { background:var(--brand); }
@@ -304,7 +313,8 @@
   .la-cell { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 10px; }
   .la-cell .k { font-size:0.62rem; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-3); font-weight:700; }
   .la-cell .v { font-size:0.85rem; font-weight:600; margin-top:2px; word-break:break-word; }
-  .la-json { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-sm); padding:10px; font-family:var(--mono); font-size:0.72rem; overflow:auto; max-height:160px; }
+  /* JSON / code is always LTR so brackets and filenames don't get mangled in RTL */
+  .la-json { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-sm); padding:10px; font-family:var(--mono); font-size:0.72rem; overflow:auto; max-height:160px; direction:ltr; text-align:left; }
 
   table.verify { width:100%; border-collapse:collapse; font-size:0.78rem; margin-top:6px; }
   table.verify th, table.verify td { border:1px solid var(--border); padding:4px 6px; text-align:start; }
@@ -383,7 +393,7 @@
   <main class="main">
     <div class="doc-head">
       <div class="doc-title-row">
-        <h1 class="doc-title" id="docTitle" data-i18n="selectAutomation">בחר אוטומציה</h1>
+        <h1 class="doc-title" id="docTitle">בחר אוטומציה</h1>
         <span class="pill" id="statusPill"><span class="pdot"></span>—</span>
         <div class="spacer"></div>
         <button class="btn primary" id="newRunBtn">
@@ -619,7 +629,7 @@
     document.documentElement.lang = prefs.lang;
     document.body.dir = rtl ? 'rtl' : 'ltr';
     applyStaticI18n();
-    if (_booted && S.activeKey) render();
+    if (_booted) { refreshHeader(); if (S.activeKey) render(); }
   }
   function setPref(patch){ prefs = { ...prefs, ...patch }; applyPrefs(); try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch(e){} }
 
@@ -646,6 +656,10 @@
   // Pull a HH:MM:SS clock out of a timestamp (ISO or "YYYY-MM-DD HH:MM:SS"),
   // falling back to the raw string if it doesn't parse.
   const _clockFromTs = ts => { const m = String(ts||'').match(/(\d{2}):(\d{2}):(\d{2})/); return m ? m[0] : String(ts||''); };
+  // Soften a backend key into a readable label: underscores → spaces. Used only
+  // for live-action / context *field names*, never for data values or the
+  // Hebrew column headers in the verify table.
+  const _label = k => String(k).replace(/_/g, ' ');
   const statusHe = s => { const v = t('st_'+s); return v === 'st_'+s ? s : v; };
 
   async function getJSON(u){ const r = await fetch(u); if(!r.ok) throw new Error(r.status+' '+await r.text()); return r.json(); }
@@ -739,7 +753,7 @@
     nav.innerHTML = Object.entries(byCustomer).map(([cust, list]) => `
       <div class="nav-group">
         <div class="nav-label">${esc(cust)}</div>
-        ${list.map(a => `<div class="auto-row ${a.key===S.activeKey?'active':''} ${_runStatusClass(a.key)}" data-key="${esc(a.key)}"><span class="dot"></span><span class="t">${esc(a.name)}</span><span class="meta">${esc(a.key.split('.').pop())}</span></div>`).join('')}
+        ${list.map(a => `<div class="auto-row ${a.key===S.activeKey?'active':''} ${_runStatusClass(a.key)}" data-key="${esc(a.key)}" title="${esc(a.name)}"><span class="dot"></span><span class="body"><span class="t">${esc(a.name)}</span><span class="meta">${esc(a.key.split('.').pop())}</span></span></div>`).join('')}
       </div>`).join('');
     nav.querySelectorAll('.auto-row').forEach(r => r.addEventListener('click', () => selectAutomation(r.dataset.key)));
 
@@ -750,6 +764,19 @@
     $('orgInitial').textContent = initial;
     $('orgName').textContent = cust;
     $('orgSub').textContent = active ? active.key.split('.')[0] + ' · ops' : t('workspace');
+  }
+
+  // Re-apply the header chrome (title, breadcrumb, status pill, sidebar) from
+  // current state. Called on language switch so dynamically-set labels (the
+  // automation name, the run status) repaint in the new language instead of
+  // getting clobbered back to a static placeholder.
+  function refreshHeader(){
+    const a = S.automations.find(x => x.key === S.activeKey);
+    $('docTitle').textContent = a ? a.name : t('selectAutomation');
+    updateBreadcrumb(a);
+    if(S.activeRunId != null && S.runDetail) setStatus(statusHe(S.runDetail.run.status));
+    else setStatus(a ? a.customer : '—');
+    renderSidebar();
   }
 
   function render(){
@@ -765,10 +792,12 @@
     if(!S.runs.length){ c.innerHTML = `<div class="center-msg">${esc(t('noRunsYet'))}<br>${esc(t('clickNewRun'))} <b>${esc(t('newRun'))}</b></div>`; return; }
     c.innerHTML = '<div class="run-list">' + S.runs.map(r => `
       <button class="run-row" data-id="${r.id}">
-        <span class="rid">#${r.id}</span>
-        <span><span class="rperiod">${esc(r.period)}</span> <span class="rwhen">${esc(r.created_at||'')}</span></span>
         <span class="status-tag status-${esc(r.status)}">${statusHe(r.status)}</span>
-        <span class="rwhen">${esc(t('step'))} ${r.current_step_index}</span>
+        <span class="run-main">
+          <span class="rperiod">${esc(r.period)}</span>
+          <span class="rwhen">${esc(r.created_at||'')} · ${esc(t('step'))} ${r.current_step_index}</span>
+        </span>
+        <span class="rid">#${r.id}</span>
       </button>`).join('') + '</div>';
     c.querySelectorAll('.run-row').forEach(row => row.addEventListener('click', () => selectRun(parseInt(row.dataset.id,10))));
   }
@@ -824,7 +853,7 @@
     const la = step.live_action || {};
     // Underscore-prefixed keys are control signals (e.g. _allow_remember), not
     // display fields — keep them out of the live-action panel.
-    const laCells = Object.entries(la).filter(([k,v]) => !k.startsWith('_') && (typeof v !== 'object' || v === null)).map(([k,v]) => `<div class="la-cell"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('');
+    const laCells = Object.entries(la).filter(([k,v]) => !k.startsWith('_') && (typeof v !== 'object' || v === null)).map(([k,v]) => `<div class="la-cell"><div class="k">${esc(_label(k))}</div><div class="v">${esc(v)}</div></div>`).join('');
     const laObjs = Object.entries(la).filter(([k,v]) => !k.startsWith('_') && typeof v === 'object' && v !== null);
     const allowRemember = !!la._allow_remember;
     const rows = step.verify_rows || [];
@@ -840,7 +869,7 @@
       <div class="step-meta"><span class="attempt">${esc(t('attempt'))} #${step.attempt_no}</span>${step.created_at ? `<span>${esc(t('executedAt'))} ${esc(_clockFromTs(step.created_at))}</span>` : ''}</div>
       ${step.notes ? `<p class="muted">${esc(step.notes)}</p>` : ''}
       <div class="la-grid">${laCells || '<span class="muted">—</span>'}</div>
-      ${laObjs.map(([k,v]) => `<div class="k" style="font-size:.62rem;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:6px 0 2px">${esc(k)}</div><pre class="la-json">${esc(JSON.stringify(v,null,2))}</pre>`).join('')}
+      ${laObjs.map(([k,v]) => `<div class="k" style="font-size:.62rem;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:6px 0 2px">${esc(_label(k))}</div><pre class="la-json">${esc(JSON.stringify(v,null,2))}</pre>`).join('')}
       ${verifyHtml}
       ${terminal ? _terminalBanner(runStatus) : `<div class="step-actions">
         <button class="btn" id="execBtn">▶ ${esc(t('rerun'))}</button>
@@ -886,9 +915,9 @@
     const HILITE = ['asik_period','consumption_rows','parse_anomaly_count','solar_rows','group_summary','reconcile'];
     const present = HILITE.filter(k => k in data);
     const scalarCells = present.filter(k => typeof data[k] !== 'object' || data[k] === null)
-      .map(k => `<div class="la-cell"><div class="k">${esc(k)}</div><div class="v">${esc(data[k])}</div></div>`).join('');
+      .map(k => `<div class="la-cell"><div class="k">${esc(_label(k))}</div><div class="v">${esc(data[k])}</div></div>`).join('');
     const objBlocks = present.filter(k => typeof data[k] === 'object' && data[k] !== null)
-      .map(k => `<div class="k" style="font-size:.62rem;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:10px 0 2px">${esc(k)}</div><pre class="la-json">${esc(JSON.stringify(data[k],null,2))}</pre>`).join('');
+      .map(k => `<div class="k" style="font-size:.62rem;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:10px 0 2px">${esc(_label(k))}</div><pre class="la-json">${esc(JSON.stringify(data[k],null,2))}</pre>`).join('');
     // Compact overview of every data key. Large row-arrays (consumption,
     // split_*) are collapsed to a count — dumping them verbatim is what froze
     // the page (the full context is hundreds of KB to several MB).
@@ -898,7 +927,7 @@
       if(Array.isArray(v)) summ = `<span class="muted">${v.length} ${esc(t('records'))}</span>`;
       else if(v !== null && typeof v === 'object') summ = `<span class="muted">{${Object.keys(v).length} ${esc(t('fields'))}}</span>`;
       else { const s = String(v); summ = esc(s.length > 80 ? s.slice(0,80)+'…' : s); }
-      return `<tr><td class="k" style="white-space:nowrap;padding:3px 10px 3px 0">${esc(k)}</td><td>${summ}</td></tr>`;
+      return `<tr><td class="k" style="white-space:nowrap;padding:3px 10px 3px 0">${esc(_label(k))}</td><td>${summ}</td></tr>`;
     }).join('');
     c.innerHTML = `<div style="max-width:1000px;margin:6px auto">
       <h3 style="margin:4px 0 8px">${esc(t('inputs'))}</h3>
