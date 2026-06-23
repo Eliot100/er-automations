@@ -295,6 +295,11 @@
 
   .detail-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:20px 22px; box-shadow:var(--sh-1); }
   .detail-card h3 { margin:0 0 10px; font-size:0.95rem; }
+  /* Re-run feedback: a brief flash proves the click re-executed the step. */
+  @keyframes ranFlash { 0%{ box-shadow:0 0 0 0 color-mix(in oklab,var(--brand) 55%,transparent); border-color:var(--brand); } 100%{ box-shadow:0 0 0 12px transparent; border-color:var(--border); } }
+  .detail-card.ran { animation:ranFlash .9s ease-out; }
+  .step-meta { display:flex; gap:8px; align-items:center; font-size:.72rem; color:var(--ink-3); margin:-4px 0 12px; }
+  .step-meta .attempt { font-family:var(--mono); font-weight:700; color:var(--brand-ink); background:var(--brand-soft); border:1px solid var(--border); border-radius:999px; padding:1px 8px; }
   .la-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-bottom:16px; }
   .la-cell { background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 10px; }
   .la-cell .k { font-size:0.62rem; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-3); font-weight:700; }
@@ -541,6 +546,9 @@
   // =====================================================================
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  // Pull a HH:MM:SS clock out of a timestamp (ISO or "YYYY-MM-DD HH:MM:SS"),
+  // falling back to the raw string if it doesn't parse.
+  const _clockFromTs = ts => { const m = String(ts||'').match(/(\d{2}):(\d{2}):(\d{2})/); return m ? m[0] : String(ts||''); };
   const statusHe = s => ({running:'רץ', paused:'ממתין', completed:'הושלם', aborted:'בוטל'}[s] || s);
 
   async function getJSON(u){ const r = await fetch(u); if(!r.ok) throw new Error(r.status+' '+await r.text()); return r.json(); }
@@ -713,7 +721,7 @@
         return;
       }
       host.innerHTML = `<h3>צעד ${idx}</h3><p class="muted">צעד זה עדיין לא בוצע.</p><div class="step-actions"><button class="btn primary" id="execBtn">▶ הרץ צעד ${idx}</button></div>`;
-      $('execBtn').addEventListener('click', () => executeStep(idx));
+      $('execBtn').addEventListener('click', (e) => executeStep(idx, e.currentTarget));
       return;
     }
     const la = step.live_action || {};
@@ -732,6 +740,7 @@
       }</tbody></table></div>`;
     }
     host.innerHTML = `<h3>צעד ${step.step_index}: ${esc(step.name)} <span class="status-tag status-${step.status==='good'?'completed':step.status==='verify'?'paused':(step.status==='bad'||step.status==='aborted')?'aborted':'running'}">${esc(step.status)}</span></h3>
+      <div class="step-meta"><span class="attempt">ניסיון #${step.attempt_no}</span>${step.created_at ? `<span>בוצע ${esc(_clockFromTs(step.created_at))}</span>` : ''}</div>
       ${step.notes ? `<p class="muted">${esc(step.notes)}</p>` : ''}
       <div class="la-grid">${laCells || '<span class="muted">—</span>'}</div>
       ${laObjs.map(([k,v]) => `<div class="k" style="font-size:.62rem;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:6px 0 2px">${esc(k)}</div><pre class="la-json">${esc(JSON.stringify(v,null,2))}</pre>`).join('')}
@@ -750,7 +759,7 @@
       S.edits = S.edits.filter(e => !(e.row_id === rid && e.column === col));
       S.edits.push({ row_id: rid, column: col, old_value: inp.dataset.old, new_value: inp.value });
     }));
-    $('execBtn').addEventListener('click', () => executeStep(step.step_index));
+    $('execBtn').addEventListener('click', (e) => executeStep(step.step_index, e.currentTarget));
     $('goodBtn').addEventListener('click', () => approveStep(step.step_index));
     const vb = $('verifyBtn'); if(vb) vb.addEventListener('click', () => submitEdits(step.step_index));
     $('rejBtn').addEventListener('click', () => rejectStep(step));
@@ -806,7 +815,29 @@
   }
 
   // ---------- step actions ----------
-  async function executeStep(idx){ try { await postJSON(`/runs/${S.activeRunId}/steps/${idx}/execute`); await refreshData(); render(); showToast('צעד '+idx+' בוצע'); } catch(e){ showErr(e); } }
+  async function executeStep(idx, btn){
+    // Re-run vs first run: if a row already exists for this step, this click
+    // re-executes it (append-only → attempt_no bumps). Capture that so the
+    // feedback can prove the click did something, not just silently re-render.
+    const prevStep = (S.runDetail?.steps || []).find(s => s.step_index === idx);
+    const isRerun = !!prevStep;
+    const prevAttempt = prevStep ? prevStep.attempt_no : 0;
+    let restore = null;
+    if(btn){ restore = btn.innerHTML; btn.disabled = true; btn.innerHTML = '⏳ מריץ…'; }
+    try {
+      await postJSON(`/runs/${S.activeRunId}/steps/${idx}/execute`);
+      await refreshData();
+      render();
+      // After re-render the detail card is fresh; flash it so the eye catches it.
+      const card = $('stepDetail'); if(card) card.classList.add('ran');
+      const now = (S.runDetail?.steps || []).find(s => s.step_index === idx);
+      const att = now ? now.attempt_no : prevAttempt + 1;
+      showToast(isRerun ? `צעד ${idx} הורץ מחדש · ניסיון #${att}` : `צעד ${idx} בוצע`);
+    } catch(e){
+      if(btn && restore != null){ btn.disabled = false; btn.innerHTML = restore; }
+      showErr(e);
+    }
+  }
   async function approveStep(idx){
     try {
       await postJSON(`/runs/${S.activeRunId}/steps/${idx}/approve`);
