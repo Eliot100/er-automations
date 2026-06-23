@@ -64,16 +64,19 @@ def read_asik(path: str | Path) -> AsikReport:
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(path)
-    xl = pd.ExcelFile(path)
-    sheets = list(xl.sheet_names)
+    # Use a context manager so the underlying file handle is released as soon
+    # as we're done. Leaving it open kept the xlsx locked on Windows, which
+    # later broke deleting the run's folder (REMOVE prior-data → WinError 32).
+    with pd.ExcelFile(path) as xl:
+        sheets = list(xl.sheet_names)
 
-    main_name = _find_main_sheet(sheets)
-    social_name = _find_first(sheets, _SOCIAL_HINT)
+        main_name = _find_main_sheet(sheets)
+        social_name = _find_first(sheets, _SOCIAL_HINT)
 
-    consumption = _read_consumption_sheet(xl, main_name) if main_name else _empty_consumption()
-    social = _read_consumption_sheet(xl, social_name) if social_name else _empty_consumption()
-    metadata = _read_metadata(xl, main_name) if main_name else {}
-    period = _derive_period(metadata)
+        consumption = _read_consumption_sheet(xl, main_name) if main_name else _empty_consumption()
+        social = _read_consumption_sheet(xl, social_name) if social_name else _empty_consumption()
+        metadata = _read_metadata(xl, main_name) if main_name else {}
+        period = _derive_period(metadata)
 
     return AsikReport(
         period=period,

@@ -14,8 +14,12 @@ single step execution removes just its leaf folder.
 
 from __future__ import annotations
 
+import gc
+import os
 import shutil
 import sqlite3
+import stat
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -88,11 +92,42 @@ def write_artifact(
     )
 
 
+def _on_rm_error(func, path, excinfo):  # type: ignore[no-untyped-def]
+    """rmtree error handler: clear a read-only bit, then retry the op once.
+
+    If the file is still unremovable (e.g. a live lock), the retry raises and
+    propagates to `_rmtree_resilient`'s loop, which waits and tries again.
+    """
+    try:
+        os.chmod(path, stat.S_IWRITE)
+    except OSError:
+        pass
+    func(path)
+
+
+def _rmtree_resilient(folder: Path) -> None:
+    """`shutil.rmtree` that tolerates transient Windows file locks.
+
+    A just-read xlsx can keep a handle open for a moment after the reader
+    returns; on Windows that yields WinError 32 ("used by another process").
+    Force a GC pass and retry a few times before giving up.
+    """
+    for attempt in range(5):
+        try:
+            shutil.rmtree(folder, onexc=_on_rm_error)
+            return
+        except OSError:
+            gc.collect()  # drop any lingering ExcelFile / file objects
+            time.sleep(0.2 * (attempt + 1))
+    # Final attempt: let the error surface if the lock truly never released.
+    shutil.rmtree(folder, onexc=_on_rm_error)
+
+
 def delete_run_files(data_root: str | Path, run_id: int) -> None:
     """Remove the on-disk subtree for a run. The DB cascade is the caller's job."""
     folder = runs_root(data_root) / str(run_id)
     if folder.exists():
-        shutil.rmtree(folder)
+        _rmtree_resilient(folder)
 
 
 def delete_step_files(
@@ -100,4 +135,4 @@ def delete_step_files(
 ) -> None:
     folder = step_dir(data_root, run_id, step_index, step_execution_id)
     if folder.exists():
-        shutil.rmtree(folder)
+        _rmtree_resilient(folder)

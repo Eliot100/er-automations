@@ -75,6 +75,29 @@ def test_asik_reader_missing_file_raises(tmp_path) -> None:
         read_asik(tmp_path / "nope.xlsx")
 
 
+def test_asik_reader_releases_file_handle(tmp_path) -> None:
+    """Reading must not leave the xlsx locked.
+
+    Regression for the REMOVE-prior-data 500 on Windows: read_asik left the
+    pd.ExcelFile open, so deleting the run folder later raised WinError 32.
+    Copy the sample into a temp dir, read it, and assert the whole dir can be
+    removed immediately afterwards.
+    """
+    import shutil
+
+    folder = tmp_path / "inputs"
+    folder.mkdir()
+    target = folder / "sample.xlsx"
+    shutil.copy(SAMPLE_XLSX, target)
+
+    report = read_asik(target)
+    assert not report.consumption.empty  # actually read it
+
+    # If the handle leaked, this raises PermissionError on Windows.
+    shutil.rmtree(folder)
+    assert not folder.exists()
+
+
 # ---------- fake steps used by Runner tests ----------
 
 
