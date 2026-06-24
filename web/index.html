@@ -480,6 +480,23 @@
     <div><div class="st-name" data-i18n="approvalReq">אישור נדרש בכל צעד</div><div class="st-sub" data-i18n="approvalSub">עצור לפני כל הרצת צעד</div></div>
     <button class="switch" id="approvalSw" role="switch" aria-checked="true"><span class="knob"></span></button>
   </div>
+
+  <div style="height:1px;background:var(--border);margin:14px -18px 12px"></div>
+  <div class="set-row" style="margin-bottom:0">
+    <label data-i18n="dbSection">מסד נתונים</label>
+    <div id="setDbPath" style="font-family:var(--mono);font-size:0.67rem;color:var(--ink-3);background:var(--surface-3);border-radius:var(--r-sm);padding:5px 8px;margin-bottom:4px;word-break:break-all;direction:ltr;text-align:left;min-height:1.4em">—</div>
+    <div id="setDbStats" style="font-size:0.67rem;color:var(--ink-4);margin-bottom:8px">—</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button class="btn" id="copyDbPathBtn" style="flex:1;padding:5px 8px;font-size:0.71rem" data-i18n="copyPath">העתק נתיב</button>
+      <button class="btn bad" id="cleanDbBtn" style="flex:1;padding:5px 8px;font-size:0.71rem" data-i18n="cleanDb">נקה נתונים</button>
+    </div>
+    <label data-i18n="mongoUri" style="display:block;margin-bottom:4px">MongoDB URI</label>
+    <input type="text" id="mongoUriInput" placeholder="mongodb://localhost:27017" style="width:100%;padding:5px 8px;border:1px solid var(--border-2);border-radius:var(--r-sm);font-size:0.7rem;font-family:var(--mono);background:var(--surface);color:var(--ink);margin-bottom:6px">
+    <div style="display:flex;gap:6px">
+      <button class="btn" id="saveMongoBtn" style="flex:1;padding:5px 8px;font-size:0.71rem" data-i18n="saveUri">שמור URI</button>
+      <button class="btn ghost" id="mongoGuideBtn" style="flex:1;padding:5px 8px;font-size:0.71rem" data-i18n="mongoGuide">מדריך</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-back" id="newRunBack">
@@ -536,6 +553,32 @@
   </div>
 </div>
 
+<div class="modal-back" id="cleanDbBack">
+  <div class="modal" role="dialog" aria-label="Clean data">
+    <h3 data-i18n="cleanDb">נקה נתונים</h3>
+    <p class="hint" data-i18n="cleanDbDesc">ריצות, קבצים ופלטים יימחקו מהדיסק וממסד הנתונים.</p>
+    <div class="del-warn">⚠ <span data-i18n="cleanDbWarn">פעולה זו בלתי הפיכה. כל הריצות יאבדו לצמיתות.</span></div>
+    <div class="modal-actions">
+      <button class="btn" id="cleanDbCancel" data-i18n="cancel">ביטול</button>
+      <button class="btn bad" id="cleanDbConfirm" data-i18n="cleanDbConfirm">נקה הכל</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="mongoGuideBack">
+  <div class="modal" style="width:500px;max-width:94vw" role="dialog" aria-label="MongoDB setup">
+    <h3 data-i18n="mongoGuideTitle">התקנת MongoDB</h3>
+    <div class="seg" id="osGuideSeg" style="margin:8px 0 14px">
+      <button data-val="windows" aria-pressed="true">Windows</button>
+      <button data-val="linux" aria-pressed="false">Linux / Mac</button>
+    </div>
+    <div id="mongoGuideContent"></div>
+    <div class="modal-actions">
+      <button class="btn" id="closeMongoGuide" data-i18n="close">סגור</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
   <span id="toastMsg">—</span>
@@ -547,6 +590,8 @@
   const settingsBtn = document.getElementById('settingsBtn');
   const settingsPop = document.getElementById('settingsPop');
   settingsBtn.addEventListener('click', e => { e.stopPropagation(); settingsPop.toggleAttribute('data-open'); });
+  // Load DB info into the settings panel whenever it opens.
+  settingsBtn.addEventListener('click', () => { if(settingsPop.hasAttribute('data-open')) loadDbSettings(); });
   document.addEventListener('click', e => {
     if (settingsPop.hasAttribute('data-open') && !settingsPop.contains(e.target) && !settingsBtn.contains(e.target))
       settingsPop.removeAttribute('data-open');
@@ -599,6 +644,15 @@
       deleteRun:'מחק ריצה', deleteRunTitle:'מחיקת ריצה',
       deleteRunWarn:'פעולה זו בלתי הפיכה. הריצה, כל הצעדים, הקבצים שהופקו וההקשר יימחקו לצמיתות.',
       deleteRunConfirm:'מחק לצמיתות', runDeleted:'הריצה נמחקה',
+      dbSection:'מסד נתונים', copyPath:'העתק נתיב', pathCopied:'הנתיב הועתק',
+      cleanDb:'נקה נתונים', cleanDbDesc:'ריצות, קבצים ופלטים יימחקו מהדיסק וממסד הנתונים.',
+      cleanDbWarn:'פעולה זו בלתי הפיכה. כל הריצות, הקבצים שהופקו וכל ההיסטוריה יאבדו לצמיתות.',
+      cleanDbConfirm:'נקה הכל', dbCleaned:'הנתונים נוקו',
+      mongoUri:'MongoDB URI', saveUri:'שמור URI', uriSaved:'ה-URI נשמר',
+      mongoGuide:'מדריך התקנה', mongoGuideTitle:'התקנת MongoDB',
+      close:'סגור', setupWelcome:'ברוכים הבאים לאוטומציות ER',
+      setupDesc:'המערכת מוכנה לשימוש. צור ריצה חדשה כדי להתחיל.',
+      dbReady:'SQLite מוכן', notConfigured:'לא מוגדר',
     },
     en: {
       notifications:'Notifications', settings:'Settings', user:'User', loading:'Loading…',
@@ -635,6 +689,15 @@
       deleteRun:'Delete run', deleteRunTitle:'Delete run',
       deleteRunWarn:'This action is irreversible. The run, all its steps, generated files and context will be permanently deleted.',
       deleteRunConfirm:'Delete permanently', runDeleted:'Run deleted',
+      dbSection:'Database', copyPath:'Copy path', pathCopied:'Path copied',
+      cleanDb:'Clean data', cleanDbDesc:'Runs, files and outputs will be deleted from disk and the database.',
+      cleanDbWarn:'This action is irreversible. All runs, generated files and history will be permanently lost.',
+      cleanDbConfirm:'Clean all', dbCleaned:'Data cleaned',
+      mongoUri:'MongoDB URI', saveUri:'Save URI', uriSaved:'URI saved',
+      mongoGuide:'Install guide', mongoGuideTitle:'MongoDB Setup',
+      close:'Close', setupWelcome:'Welcome to ER Automations',
+      setupDesc:'The system is ready. Create a new run to get started.',
+      dbReady:'SQLite ready', notConfigured:'Not configured',
     },
   };
   // Step display labels per language. The backend ships stable English step
@@ -748,8 +811,14 @@
     if(!r.ok) throw new Error(r.status+' '+await r.text());
     return r.status === 204 ? null : r.json().catch(() => ({}));
   }
+  async function patchJSON(u, body){
+    const r = await fetch(u, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    if(!r.ok) throw new Error(r.status+' '+await r.text());
+    return r.json().catch(() => ({}));
+  }
 
   const S = { automations:[], activeKey:null, runs:[], runsByKey:{}, activeRunId:null, runDetail:null, activeStepIdx:0, edits:[], tab:'run', artifacts:[], context:null, expanded:new Set() };
+  let _dbSettings = null; // cached from GET /settings/db
 
   function showErr(e){ const c = $('canvas'); const b = document.createElement('div'); b.className='err-banner'; b.textContent = t('error') + ': ' + (e && e.message || e); c.prepend(b); setTimeout(()=>b.remove(), 7000); console.error(e); }
   function setStatus(text){ $('statusPill').innerHTML = '<span class="pdot"></span>' + esc(text); }
@@ -757,6 +826,8 @@
   // ---------- data loaders ----------
   async function loadAutomations(){
     try { S.automations = await getJSON('/automations'); } catch(e){ showErr(e); }
+    // Pre-fetch DB settings so the first-run setup card renders immediately.
+    if(!_dbSettings) getJSON('/settings/db').then(db => { _dbSettings = db; }).catch(() => {});
     renderSidebar();
     if(S.automations.length) await selectAutomation(S.automations[0].key); else render();
   }
@@ -943,8 +1014,51 @@
     c.querySelectorAll('.run-del').forEach(b => b.addEventListener('click', () => askDeleteRun(parseInt(b.dataset.del,10))));
   }
 
+  function _renderSetupCard(c, db){
+    const dbPath = db ? db.db_path : '—';
+    const runCount = db ? db.run_count : 0;
+    const dbKb = db ? (db.db_size_bytes/1024).toFixed(1) : '—';
+    const mongoStatus = (db && db.mongo_uri)
+      ? `<span style="color:var(--good)">✓ ${esc(db.mongo_uri)}</span>`
+      : `<span class="muted">${esc(t('notConfigured'))}</span>`;
+    c.innerHTML = `<div class="empty" style="max-width:640px">
+      <div class="empty-hero">
+        <div class="empty-glyph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+        </div>
+        <h2>${esc(t('setupWelcome'))}</h2>
+        <p>${esc(t('setupDesc'))}</p>
+        <div class="empty-cta">
+          <button class="btn primary lg" id="setupNewRunBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>
+            ${esc(t('newRun'))}
+          </button>
+        </div>
+      </div>
+      <div class="empty-body">
+        <div class="sec-label"><span>${esc(t('dbReady'))}</span><div class="ln"></div></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+          <code style="flex:1;font-family:var(--mono);font-size:.69rem;background:var(--surface-3);border-radius:4px;padding:5px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;text-align:left">${esc(dbPath)}</code>
+          <button class="btn" style="flex:0 0 auto;padding:5px 10px;font-size:.72rem" id="scCopyPath">${esc(t('copyPath'))}</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--ink-3);margin-bottom:16px">${runCount} ${esc(t('tabRuns'))} · ${dbKb} KB</div>
+        <div class="sec-label"><span>MongoDB</span><div class="ln"></div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <span style="font-size:.82rem">${mongoStatus}</span>
+          <button class="btn ghost" style="padding:5px 12px;font-size:.72rem" id="scMongoGuide">${esc(t('mongoGuide'))}</button>
+        </div>
+      </div>
+    </div>`;
+    const nb=$('setupNewRunBtn'); if(nb) nb.addEventListener('click', openNewRun);
+    const cp=$('scCopyPath');     if(cp) cp.addEventListener('click', () => copyToClipboard(dbPath));
+    const mg=$('scMongoGuide');   if(mg) mg.addEventListener('click', openMongoGuide);
+  }
+
   function renderRun(c){
-    if(!S.runDetail){ c.innerHTML = `<div class="center-msg">${esc(t('selectRunFrom'))} <b>${esc(t('tabRuns'))}</b></div>`; return; }
+    if(!S.runDetail){
+      if(!S.runs.length){ _renderSetupCard(c, _dbSettings); return; }
+      c.innerHTML = `<div class="center-msg">${esc(t('selectRunFrom'))} <b>${esc(t('tabRuns'))}</b></div>`; return;
+    }
     const d = S.runDetail, steps = d.steps || [];
     c.innerHTML = `<div class="detail-card" id="stepDetail"></div>`;
     renderStepDetail($('stepDetail'), steps.find(s => s.step_index === S.activeStepIdx));
@@ -1238,6 +1352,98 @@
     } catch(e){ $('newRunErr').innerHTML = `<div class="err-banner">${esc(t('error'))}: `+esc(e.message||e)+'</div>'; }
   }
   $('newRunSubmit').addEventListener('click', () => submitNewRun(null));
+
+  // ---------- DB settings ----------
+  async function loadDbSettings(){
+    try { _dbSettings = await getJSON('/settings/db'); } catch(e){ _dbSettings = null; }
+    if(!_dbSettings) return;
+    $('setDbPath').textContent = _dbSettings.db_path;
+    $('setDbStats').textContent = `${_dbSettings.run_count} ${t('tabRuns').split(' ')[0]} · ${(_dbSettings.db_size_bytes/1024).toFixed(1)} KB`;
+    $('mongoUriInput').value = _dbSettings.mongo_uri || '';
+  }
+
+  function copyToClipboard(text){
+    navigator.clipboard.writeText(text)
+      .then(() => showToast(t('pathCopied')))
+      .catch(() => { showToast(text.slice(0,60)); });
+  }
+  $('copyDbPathBtn').addEventListener('click', () => { if(_dbSettings) copyToClipboard(_dbSettings.db_path); });
+
+  // clean-db modal
+  const cleanDbBack = $('cleanDbBack');
+  $('cleanDbBtn').addEventListener('click', () => { settingsPop.removeAttribute('data-open'); cleanDbBack.setAttribute('data-open',''); });
+  $('cleanDbCancel').addEventListener('click', () => cleanDbBack.removeAttribute('data-open'));
+  cleanDbBack.addEventListener('click', e => { if(e.target===cleanDbBack) cleanDbBack.removeAttribute('data-open'); });
+  async function confirmCleanDb(){
+    cleanDbBack.removeAttribute('data-open');
+    try {
+      await postJSON('/settings/db/clean');
+      S.runs=[]; S.runsByKey={}; S.activeRunId=null; S.runDetail=null;
+      S.artifacts=[]; S.context=null; S.activeStepIdx=0;
+      $('runsBadge').textContent='0'; $('filesBadge').textContent='0'; setStatus('—');
+      if(_dbSettings) _dbSettings.run_count=0;
+      renderSidebar(); render();
+      showToast(t('dbCleaned'));
+    } catch(e){ showErr(e); }
+  }
+  $('cleanDbConfirm').addEventListener('click', confirmCleanDb);
+
+  // MongoDB guide modal
+  const mongoGuideBack = $('mongoGuideBack');
+  const MONGO_GUIDE = {
+    windows:`<pre class="la-json"># 1. Install via winget (Windows 10 1709+)
+winget install MongoDB.Server
+
+# 2. Alternative: download MSI installer
+#    mongodb.com/try/download/community
+
+# 3. Start / stop the service
+net start MongoDB
+net stop MongoDB
+
+# 4. Your connection URI
+mongodb://localhost:27017</pre>`,
+    linux:`<pre class="la-json"># Ubuntu / Debian — MongoDB 7.0
+sudo apt-get install -y gnupg curl
+curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc \\
+  | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] \\
+  https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multirelease" \\
+  | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+sudo apt-get update && sudo apt-get install -y mongodb-org
+
+# Start and enable
+sudo systemctl start mongod
+sudo systemctl enable mongod
+
+# macOS (Homebrew)
+brew tap mongodb/brew && brew install mongodb-community
+brew services start mongodb-community
+
+# Your connection URI
+mongodb://localhost:27017</pre>`,
+  };
+  let _mongoOs = 'windows';
+  function _updateMongoGuide(){ $('mongoGuideContent').innerHTML = MONGO_GUIDE[_mongoOs]||''; }
+  document.querySelectorAll('#osGuideSeg button').forEach(b => b.addEventListener('click', () => {
+    _mongoOs = b.dataset.val;
+    document.querySelectorAll('#osGuideSeg button').forEach(x => x.setAttribute('aria-pressed', String(x===b)));
+    _updateMongoGuide();
+  }));
+  function openMongoGuide(){ _updateMongoGuide(); mongoGuideBack.setAttribute('data-open',''); }
+  $('mongoGuideBtn').addEventListener('click', () => { settingsPop.removeAttribute('data-open'); openMongoGuide(); });
+  $('closeMongoGuide').addEventListener('click', () => mongoGuideBack.removeAttribute('data-open'));
+  mongoGuideBack.addEventListener('click', e => { if(e.target===mongoGuideBack) mongoGuideBack.removeAttribute('data-open'); });
+
+  // Save MongoDB URI
+  $('saveMongoBtn').addEventListener('click', async () => {
+    const uri = $('mongoUriInput').value.trim();
+    try {
+      await patchJSON('/settings/db', { mongo_uri: uri });
+      if(_dbSettings) _dbSettings.mongo_uri = uri;
+      showToast(t('uriSaved'));
+    } catch(e){ showErr(e); }
+  });
 
   // ---------- boot ----------
   _booted = true;

@@ -21,6 +21,9 @@ Endpoints:
     POST /runs/{id}/steps/{idx}/reject         — abort with notes
     GET  /runs/{id}/artifacts                  — list artifacts
     GET  /runs/{id}/artifacts/{aid}            — download a generated file
+    GET  /settings/db                          — DB path, size, run count, mongo URI
+    PATCH /settings/db                         — persist settings (mongo_uri)
+    POST /settings/db/clean                    — delete all runs + on-disk artifacts
 
 The platform exposes the runner; customer-specific manifests are
 registered via `app.state.manifests[automation_key] = [Step, ...]`.
@@ -29,6 +32,7 @@ registered via `app.state.manifests[automation_key] = [Step, ...]`.
 from __future__ import annotations
 
 import json
+import shutil
 import sqlite3
 from dataclasses import asdict
 from pathlib import Path
@@ -71,6 +75,10 @@ class AutomationIn(BaseModel):
     key: str
     name: str
     customer: str
+
+
+class DbSettingsIn(BaseModel):
+    mongo_uri: str | None = None
 
 
 class StartRunOut(BaseModel):
@@ -389,6 +397,75 @@ def _register_routes(app: FastAPI) -> None:
         storage.delete_run_files(app.state.data_root, run_id)
         app.state.contexts.pop(run_id, None)
         return {"status": "deleted", "run_id": run_id}
+
+    # ===== SETTINGS =====
+
+    _SETTINGS_FILE = "er_settings.json"
+
+    def _settings_path() -> Path:
+        return app.state.data_root / _SETTINGS_FILE
+
+    def _load_settings() -> dict[str, Any]:
+        p = _settings_path()
+        if p.exists():
+            try:
+                return json.loads(p.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        return {}
+
+    @app.get("/settings/db")
+    def get_db_settings() -> dict[str, Any]:
+        """Return DB connection info and stats for the settings panel."""
+        db_path = Path(app.state.db_path).resolve()
+        data_root = app.state.data_root.resolve()
+        db_exists = db_path.exists()
+        run_count = 0
+        db_size = 0
+        if db_exists:
+            db_size = db_path.stat().st_size
+            conn = init_db(app.state.db_path)
+            try:
+                run_count = conn.execute("SELECT COUNT(*) FROM run").fetchone()[0]
+            finally:
+                conn.close()
+        cfg = _load_settings()
+        return {
+            "db_backend": "sqlite",
+            "db_path": str(db_path),
+            "db_exists": db_exists,
+            "db_size_bytes": db_size,
+            "data_root": str(data_root),
+            "run_count": run_count,
+            "mongo_uri": cfg.get("mongo_uri", ""),
+        }
+
+    @app.patch("/settings/db", status_code=200)
+    def update_db_settings(body: DbSettingsIn) -> dict[str, Any]:
+        """Persist settings (currently: mongo_uri)."""
+        cfg = _load_settings()
+        if body.mongo_uri is not None:
+            cfg["mongo_uri"] = body.mongo_uri
+        p = _settings_path()
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(cfg, ensure_ascii=False), encoding="utf-8")
+        return {"status": "ok"}
+
+    @app.post("/settings/db/clean", status_code=200)
+    def clean_db_data() -> dict[str, Any]:
+        """Delete all run records + on-disk artifacts. Automation registrations are kept."""
+        conn = init_db(app.state.db_path)
+        try:
+            run_count = conn.execute("SELECT COUNT(*) FROM run").fetchone()[0]
+            conn.execute("DELETE FROM run")
+            conn.commit()
+        finally:
+            conn.close()
+        runs_dir = app.state.data_root / "runs"
+        if runs_dir.exists():
+            shutil.rmtree(runs_dir)
+        app.state.contexts.clear()
+        return {"status": "cleaned", "runs_deleted": run_count}
 
 
 # ---------- helpers ----------

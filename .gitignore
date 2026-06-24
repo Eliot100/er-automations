@@ -7,6 +7,9 @@ __pycache__/
 build/
 dist/
 data/
+*.sqlite
+*.db
+er_settings.json
 node_modules/
 ui/dist/
 .vite/
