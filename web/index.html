@@ -107,15 +107,20 @@
   .nav-item.active svg { color:var(--brand); }
   .divider { height:1px; background:var(--border); margin:12px 6px; }
   .auto-row {
-    display:grid; grid-template-columns:auto minmax(0,1fr); gap:9px; align-items:center;
+    display:grid; grid-template-columns:auto auto minmax(0,1fr); gap:8px; align-items:center;
     padding:8px 10px; border-radius:var(--r-sm); cursor:pointer;
   }
   .auto-row:hover { background:var(--surface-3); }
   .auto-row.active { background:var(--surface-3); box-shadow:inset 2px 0 0 var(--brand); }
+  /* Chevron: collapses/expands the workflow's steps (ChatGPT-library style). */
+  .auto-row .chev { width:13px; text-align:center; font-size:0.7rem; color:var(--ink-4); flex:0 0 auto; transition:transform .12s ease; }
+  .auto-row .chev.open { transform:rotate(90deg); }
   .auto-row .dot { width:7px; height:7px; border-radius:50%; background:var(--ink-4); }
   .auto-row.is-review .dot { background:var(--verify); }
   .auto-row.is-live .dot { background:var(--good); }
   .auto-row .body { min-width:0; }
+  /* Steps nested under a workflow row — indented with an inline-start guide rail. */
+  .auto-steps { margin:1px 0 5px; margin-inline-start:13px; padding-inline-start:11px; border-inline-start:1px solid var(--border); display:flex; flex-direction:column; gap:1px; }
   /* Name leads (truncates if long); the technical key is a demoted second line. */
   .auto-row .t { display:block; font-size:0.8125rem; font-weight:500; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .auto-row .meta { display:block; font-family:var(--mono); font-size:0.625rem; color:var(--ink-4); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -269,12 +274,18 @@
   /* run list */
   .run-list { max-width:880px; margin:8px auto; display:flex; flex-direction:column; gap:8px; }
   .run-row {
-    display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center;
+    display:grid; grid-template-columns:auto 1fr auto auto; gap:14px; align-items:center;
     background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
     padding:12px 16px; cursor:pointer; box-shadow:var(--sh-1); text-align:start;
   }
   .run-row:hover { border-color:var(--brand); box-shadow:var(--sh-2); }
   .run-row .run-main { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  /* Per-run delete — muted until row hover, turns red on its own hover. */
+  .run-del { padding:6px 8px; opacity:.5; color:var(--ink-3); }
+  .run-row:hover .run-del { opacity:1; }
+  .run-del:hover { color:var(--bad); background:#fbeaea; border-color:var(--bad); }
+  /* Irreversible-action warning banner inside the delete-run modal. */
+  .del-warn { background:#fbeaea; border:1px solid var(--bad); color:var(--bad); border-radius:var(--r-sm); padding:10px 12px; font-size:0.8rem; font-weight:600; line-height:1.45; margin:4px 0 16px; }
   .run-row .rid { font-family:var(--mono); font-size:0.72rem; color:var(--ink-4); }
   .run-row .rperiod { font-weight:700; font-size:0.95rem; }
   .run-row .rwhen { font-size:0.72rem; color:var(--ink-3); }
@@ -284,14 +295,14 @@
   .status-paused { color:var(--verify); background:var(--verify-soft); border-color:transparent; }
   .status-aborted { color:var(--bad); background:#fbeaea; border-color:transparent; }
 
-  /* run detail: two columns (steps rail + detail) */
-  /* minmax(0,1fr) lets the detail column shrink below its content's intrinsic
-     width so inner blocks (la-json, verify table) scroll instead of forcing
-     the whole page to overflow horizontally. */
-  /* Compact steps rail (180 px) — rest of width goes to the data table */
-  .run-wrap { display:grid; grid-template-columns:180px minmax(0,1fr); gap:14px; align-items:start; margin:6px auto; }
-  @media (max-width:880px){ .run-wrap { grid-template-columns:1fr; } }
-  .steps-rail { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:8px; box-shadow:var(--sh-1); }
+  /* Sidebar mini title + sub-section labels */
+  .side-head { padding:14px 12px 8px; border-bottom:1px solid var(--border); flex:0 0 auto; }
+  .side-mini-title { font-size:0.65625rem; letter-spacing:.8px; text-transform:uppercase; color:var(--ink-4); font-weight:700; }
+  .nav-sub { padding:10px 10px 3px; font-size:0.65625rem; letter-spacing:.7px; text-transform:uppercase; color:var(--ink-4); font-weight:700; }
+  .nav-sub:first-child { padding-top:6px; }
+
+  /* Steps rail (lives in sidebar when a run is active) */
+  .steps-rail { background:transparent; }
   .step-item { position:relative; display:flex; align-items:center; gap:7px; padding:7px 9px; border-radius:var(--r-sm); cursor:pointer; overflow:hidden; }
   .step-item:hover { background:var(--surface-3); }
   .step-item.active { background:var(--brand-soft); }
@@ -304,14 +315,6 @@
   .step-item .sname { font-size:0.77rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
   /* A done step shows a green check dot. */
   .step-item .pip.done { width:15px; height:15px; background:var(--good); color:#fff; display:grid; place-items:center; font-size:9px; font-weight:900; line-height:1; border-radius:50%; }
-  /* Collapsible rail header = the human-readable automation name. */
-  .rail-head { display:flex; align-items:center; gap:7px; width:100%; background:transparent; border:0; padding:4px 8px 8px; text-align:start; color:var(--ink); }
-  .rail-head:hover { color:var(--brand); }
-  .rail-head .chev { width:13px; height:13px; color:var(--ink-3); transition:transform .15s; flex:0 0 auto; }
-  .rail-head:hover .chev { color:var(--brand); }
-  .steps-rail.collapsed .rail-head .chev { transform:rotate(-90deg); }
-  .rail-head .rail-title { font-family:var(--sans); font-size:0.78rem; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
-  .steps-rail.collapsed .rail-body { display:none; }
   /* Excel-style tab bar above a tabbed verify table */
   .vtabs { display:flex; gap:0; margin-bottom:0; border-bottom:1px solid var(--border-2); }
   .vtab { padding:5px 14px; border:1px solid var(--border-2); border-bottom:none; border-radius:var(--r-sm) var(--r-sm) 0 0; background:var(--surface-3); color:var(--ink-3); font-size:0.76rem; font-weight:600; cursor:pointer; margin-bottom:-1px; }
@@ -395,10 +398,12 @@
   </div>
 
   <aside class="sidebar">
-    <div class="side-scroll">
-      <div id="autoNav"><div class="nav-label" data-i18n="automations">אוטומציות</div><div class="muted" style="padding:8px 10px;font-size:0.8rem" data-i18n="loading">טוען…</div></div>
+    <div class="side-head">
+      <span class="side-mini-title" data-i18n="electricityDistributor">מחלק חשמל</span>
     </div>
-
+    <div class="side-scroll">
+      <div id="autoNav"></div>
+    </div>
   </aside>
 
   <main class="main">
@@ -415,8 +420,8 @@
       <p class="doc-sub" id="docSub" data-i18n="docSub">אוטומציה מפוקחת — כל צעד עוצר לאישורך לפני שהבא מתחיל. שום דבר לא קורה בלי האישור שלך.</p>
 
       <div class="tabs" id="tabs">
-        <button class="tab active" data-tab="runs"><span data-i18n="tabRuns">ריצות</span> <span class="badge" id="runsBadge">0</span></button>
-        <button class="tab" data-tab="run" data-i18n="tabCurrent">ריצה נוכחית</button>
+        <button class="tab active" data-tab="run" data-i18n="tabCurrent">ריצה נוכחית</button>
+        <button class="tab" data-tab="runs"><span data-i18n="tabRuns">ריצות קודמות</span> <span class="badge" id="runsBadge">0</span></button>
         <button class="tab" data-tab="files"><span data-i18n="tabFiles">קבצים</span> <span class="badge" id="filesBadge">0</span></button>
         <button class="tab" data-tab="context" data-i18n="tabContext">הקשר</button>
       </div>
@@ -519,6 +524,18 @@
   </div>
 </div>
 
+<div class="modal-back" id="delRunBack">
+  <div class="modal" role="dialog" aria-label="Delete run">
+    <h3 data-i18n="deleteRunTitle">מחיקת ריצה</h3>
+    <p class="hint" id="delRunWhich">—</p>
+    <div class="del-warn">⚠ <span data-i18n="deleteRunWarn">פעולה זו בלתי הפיכה. הריצה, כל הצעדים, הקבצים שהופקו וההקשר יימחקו לצמיתות.</span></div>
+    <div class="modal-actions">
+      <button class="btn" id="delRunCancel" data-i18n="cancel">ביטול</button>
+      <button class="btn bad" id="delRunConfirm" data-i18n="deleteRunConfirm">מחק לצמיתות</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
   <span id="toastMsg">—</span>
@@ -554,7 +571,7 @@
       newRun:'ריצה חדשה', createRun:'צור ריצה', cancel:'ביטול',
       asikFileHint:'דוח הצריכה שהופק מ-ASIK', solarFileHint:'קובץ הסולאר — ניתן להמשיך בלעדיו',
       docSub:'אוטומציה מפוקחת — כל צעד עוצר לאישורך לפני שהבא מתחיל. שום דבר לא קורה בלי האישור שלך.',
-      tabRuns:'ריצות', tabCurrent:'ריצה נוכחית', tabFiles:'קבצים', tabContext:'הקשר',
+      tabRuns:'ריצות קודמות', tabCurrent:'ריצה נוכחית', tabFiles:'קבצים', tabContext:'הקשר',
       setPersonal:'העדפות אישיות לסביבת העבודה.', appearance:'מראה', light:'בהיר', dark:'כהה',
       accent:'צבע הדגשה', cBlue:'כחול', cGreen:'ירוק', cViolet:'סגול', cGray:'אפור',
       density:'צפיפות', comfortable:'רווח', compact:'צפוף', textSize:'גודל טקסט',
@@ -578,7 +595,10 @@
       useExisting:'השתמש בקיים', ignore:'התעלם', runCreated:'נוצרה', error:'שגיאה',
       st_running:'רץ', st_paused:'ממתין', st_completed:'הושלם', st_aborted:'בוטל',
       sx_good:'הושלם', sx_verify:'לאימות', sx_running:'רץ', sx_bad:'נכשל', sx_aborted:'בוטל',
-      ready:'מוכן', collapseSteps:'כווץ/הרחב צעדים',
+      electricityDistributor:'מחלק חשמל', monthly:'חודשי', annual:'שנתי',
+      deleteRun:'מחק ריצה', deleteRunTitle:'מחיקת ריצה',
+      deleteRunWarn:'פעולה זו בלתי הפיכה. הריצה, כל הצעדים, הקבצים שהופקו וההקשר יימחקו לצמיתות.',
+      deleteRunConfirm:'מחק לצמיתות', runDeleted:'הריצה נמחקה',
     },
     en: {
       notifications:'Notifications', settings:'Settings', user:'User', loading:'Loading…',
@@ -587,7 +607,7 @@
       newRun:'New run', createRun:'Create run', cancel:'Cancel',
       asikFileHint:'Consumption report exported from ASIK', solarFileHint:'Solar file — optional, you can skip it',
       docSub:'Supervised automation — every step pauses for your approval before the next begins. Nothing happens without your sign-off.',
-      tabRuns:'Runs', tabCurrent:'Current run', tabFiles:'Files', tabContext:'Context',
+      tabRuns:'Past runs', tabCurrent:'Current run', tabFiles:'Files', tabContext:'Context',
       setPersonal:'Personal workspace preferences.', appearance:'Appearance', light:'Light', dark:'Dark',
       accent:'Accent color', cBlue:'Blue', cGreen:'Green', cViolet:'Violet', cGray:'Gray',
       density:'Density', comfortable:'Comfortable', compact:'Compact', textSize:'Text size',
@@ -611,7 +631,10 @@
       useExisting:'Use existing', ignore:'Ignore', runCreated:'created', error:'Error',
       st_running:'Running', st_paused:'Awaiting', st_completed:'Completed', st_aborted:'Aborted',
       sx_good:'Done', sx_verify:'Review', sx_running:'Running', sx_bad:'Failed', sx_aborted:'Aborted',
-      ready:'Ready', collapseSteps:'Collapse / expand steps',
+      electricityDistributor:'Electricity distributor', monthly:'Monthly', annual:'Annual',
+      deleteRun:'Delete run', deleteRunTitle:'Delete run',
+      deleteRunWarn:'This action is irreversible. The run, all its steps, generated files and context will be permanently deleted.',
+      deleteRunConfirm:'Delete permanently', runDeleted:'Run deleted',
     },
   };
   // Step display labels per language. The backend ships stable English step
@@ -720,8 +743,13 @@
     if(!r.ok) throw new Error(r.status+' '+await r.text());
     return r.json().catch(() => ({}));
   }
+  async function delJSON(u){
+    const r = await fetch(u, { method:'DELETE' });
+    if(!r.ok) throw new Error(r.status+' '+await r.text());
+    return r.status === 204 ? null : r.json().catch(() => ({}));
+  }
 
-  const S = { automations:[], activeKey:null, runs:[], runsByKey:{}, activeRunId:null, runDetail:null, activeStepIdx:0, edits:[], tab:'runs', artifacts:[], context:null, railOpen:true };
+  const S = { automations:[], activeKey:null, runs:[], runsByKey:{}, activeRunId:null, runDetail:null, activeStepIdx:0, edits:[], tab:'run', artifacts:[], context:null, expanded:new Set() };
 
   function showErr(e){ const c = $('canvas'); const b = document.createElement('div'); b.className='err-banner'; b.textContent = t('error') + ': ' + (e && e.message || e); c.prepend(b); setTimeout(()=>b.remove(), 7000); console.error(e); }
   function setStatus(text){ $('statusPill').innerHTML = '<span class="pdot"></span>' + esc(text); }
@@ -756,22 +784,20 @@
   function updateBreadcrumb(a) {
     const crumbs = $('crumbs');
     if (!a) { crumbs.innerHTML = '<span class="muted">—</span>'; return; }
-    crumbs.innerHTML = `<span>${esc(a.customer)}</span><span class="sep">/</span><b>${esc(a.name)}</b>`;
+    crumbs.innerHTML = `<span>${esc(t('electricityDistributor'))}</span><span class="sep">/</span><b>${esc(a.name)}</b>`;
   }
 
   async function selectAutomation(key){
     S.activeKey = key; S.activeRunId = null; S.runDetail = null;
+    S.expanded.add(key); // selecting a workflow expands its steps in the sidebar tree
     const a = S.automations.find(x => x.key === key);
     $('docTitle').textContent = a ? a.name : key;
-    // Status pill reflects run state, not the customer — the customer already
-    // shows in the breadcrumb and the sidebar group, so repeating it here was
-    // just noise. "Ready" until a run is opened.
-    setStatus(a ? t('ready') : '—');
+    setStatus('—');
     updateBreadcrumb(a);
     renderSidebar();
     await loadRuns();
     renderSidebar(); // re-render after runs loaded so status dots are correct
-    setActiveTab('runs');
+    setActiveTab('run'); // Current run is the primary tab
   }
   async function selectRun(id){
     S.activeRunId = id; S.edits = [];
@@ -800,19 +826,79 @@
     return '';
   }
 
+  // Build the step children for one workflow `a`, ChatGPT-library style: the
+  // automation is the parent, its steps are the indented children. Colored
+  // status pips are shown only for the *active* automation's current run —
+  // other (collapsed-on-open) workflows list their steps as plain pending.
+  // Does not wire event handlers — the caller does that.
+  function _renderStepItems(a){
+    const allStepKeys = (a && a.steps && a.steps.length) ? a.steps : [];
+    if(!allStepKeys.length) return `<div class="muted" style="padding:6px 10px;font-size:.76rem">${esc(t('noStepsRun'))}</div>`;
+    const live = (a.key === S.activeKey && S.runDetail) ? S.runDetail : null;
+    const steps = live ? (live.steps || []) : [];
+    const cur = live ? (live.run.current_step_index ?? 0) : -1;
+    const stepFor = idx => steps.find(s => s.step_index === idx);
+    const pip = idx => {
+      if(!live) return '<span class="pip s-pending"></span>';
+      const s = stepFor(idx);
+      if (!s) return '<span class="pip s-pending"></span>';
+      if (s.step_index < cur || s.status === 'good') return '<span class="pip done">✓</span>';
+      if (s.status === 'verify') return '<span class="pip s-verify"></span>';
+      if (s.status === 'bad' || s.status === 'aborted') return '<span class="pip s-bad"></span>';
+      if (s.status === 'running') return '<span class="pip s-running"></span>';
+      return '<span class="pip s-pending"></span>';
+    };
+    return allStepKeys.map((key, idx) => {
+      const activeStep = live && idx === S.activeStepIdx;
+      return `<div class="step-item ${activeStep?'active':''}" data-key="${esc(a.key)}" data-idx="${idx}" title="${esc(stepName(key))}">${pip(idx)}<span class="sname">${esc(stepName(key))}</span></div>`;
+    }).join('');
+  }
+
+  // Sidebar = the expanding workflow tree. Each automation is a collapsible
+  // parent (monthly / annual sub-sections, electricity before solar); expanding
+  // reveals its steps. The selected workflow auto-expands and its steps drive
+  // (and reflect) the Current run tab.
   function renderSidebar(){
     const nav = $('autoNav');
-    if(!S.automations.length){ nav.innerHTML = `<div class="nav-label">${esc(t('automations'))}</div><div class="muted" style="padding:8px 10px;font-size:.8rem">${esc(t('noAutomations'))}</div>`; return; }
-    const byCustomer = {};
-    S.automations.forEach(a => { (byCustomer[a.customer] = byCustomer[a.customer] || []).push(a); });
-    nav.innerHTML = Object.entries(byCustomer).map(([cust, list]) => `
-      <div class="nav-group">
-        <div class="nav-label">${esc(cust)}</div>
-        ${list.map(a => `<div class="auto-row ${a.key===S.activeKey?'active':''} ${_runStatusClass(a.key)}" data-key="${esc(a.key)}" title="${esc(a.name)}"><span class="dot"></span><span class="body"><span class="t">${esc(a.name)}</span><span class="meta">${esc(a.key.split('.').pop())}</span></span></div>`).join('')}
-      </div>`).join('');
-    nav.querySelectorAll('.auto-row').forEach(r => r.addEventListener('click', () => selectAutomation(r.dataset.key)));
+    if(!S.automations.length){
+      nav.innerHTML = `<div class="muted" style="padding:8px 10px;font-size:.8rem">${esc(t('noAutomations'))}</div>`;
+      return;
+    }
+    const elecFirst = list => [...list].sort((a,b) => (a.key.startsWith('electricity_')?0:1) - (b.key.startsWith('electricity_')?0:1));
+    const autoTree = a => {
+      const open = S.expanded.has(a.key);
+      const parent = `<div class="auto-row ${a.key===S.activeKey?'active':''} ${_runStatusClass(a.key)}" data-key="${esc(a.key)}" title="${esc(a.name)}">`
+        + `<span class="chev ${open?'open':''}" data-chev="${esc(a.key)}">▸</span>`
+        + `<span class="dot"></span><span class="body"><span class="t">${esc(a.name)}</span></span></div>`;
+      return parent + (open ? `<div class="auto-steps">${_renderStepItems(a)}</div>` : '');
+    };
+    const sectionHtml = (labelKey, items) => items.length ? `<div class="nav-sub">${esc(t(labelKey))}</div>${elecFirst(items).map(autoTree).join('')}` : '';
+    const monthly = S.automations.filter(a => a.key.includes('_monthly'));
+    const annual  = S.automations.filter(a => a.key.includes('_annual'));
+    nav.innerHTML = sectionHtml('monthly', monthly) + sectionHtml('annual', annual);
 
-    const active = S.automations.find(a => a.key === S.activeKey);
+    // Chevron toggles expansion only — it must not change the active workflow.
+    nav.querySelectorAll('.chev').forEach(ch => ch.addEventListener('click', e => {
+      e.stopPropagation();
+      const k = ch.dataset.chev;
+      if(S.expanded.has(k)) S.expanded.delete(k); else S.expanded.add(k);
+      renderSidebar();
+    }));
+    // Parent row selects the workflow (selectAutomation also expands it).
+    nav.querySelectorAll('.auto-row').forEach(r => r.addEventListener('click', () => selectAutomation(r.dataset.key)));
+    // Step child → drive the Current run tab to that step.
+    nav.querySelectorAll('.step-item').forEach(it => it.addEventListener('click', e => {
+      e.stopPropagation();
+      onStepNav(it.dataset.key, parseInt(it.dataset.idx, 10));
+    }));
+  }
+
+  // Clicking a step in the sidebar tree navigates the main Current run tab.
+  function onStepNav(key, idx){
+    if(key !== S.activeKey){ selectAutomation(key); return; } // different workflow: just select it
+    if(!S.runDetail) return;            // no run open yet — nothing to show
+    S.activeStepIdx = idx;
+    setActiveTab('run');                // ensure the Current run tab is showing (re-renders + syncs sidebar)
   }
 
   // Re-apply the header chrome (title, breadcrumb, status pill, sidebar) from
@@ -824,7 +910,7 @@
     $('docTitle').textContent = a ? a.name : t('selectAutomation');
     updateBreadcrumb(a);
     if(S.activeRunId != null && S.runDetail) setStatus(statusLabel(S.runDetail.run.status));
-    else setStatus(a ? t('ready') : '—');
+    else setStatus('—');
     renderSidebar();
   }
 
@@ -839,70 +925,31 @@
 
   function renderRuns(c){
     if(!S.runs.length){ c.innerHTML = `<div class="center-msg">${esc(t('noRunsYet'))}<br>${esc(t('clickNewRun'))} <b>${esc(t('newRun'))}</b></div>`; return; }
+    const trash = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"></path></svg>';
     c.innerHTML = '<div class="run-list">' + S.runs.map(r => `
-      <button class="run-row" data-id="${r.id}">
+      <div class="run-row" data-id="${r.id}">
         <span class="status-tag status-${esc(r.status)}">${statusLabel(r.status)}</span>
         <span class="run-main">
           <span class="rperiod">${esc(r.period)}</span>
           <span class="rwhen">${esc(r.created_at||'')} · ${esc(t('step'))} ${r.current_step_index}</span>
         </span>
         <span class="rid">#${r.id}</span>
-      </button>`).join('') + '</div>';
-    c.querySelectorAll('.run-row').forEach(row => row.addEventListener('click', () => selectRun(parseInt(row.dataset.id,10))));
+        <button class="btn ghost run-del" data-del="${r.id}" title="${esc(t('deleteRun'))}" aria-label="${esc(t('deleteRun'))}">${trash}</button>
+      </div>`).join('') + '</div>';
+    c.querySelectorAll('.run-row').forEach(row => row.addEventListener('click', e => {
+      if(e.target.closest('.run-del')) return; // the delete button has its own handler
+      selectRun(parseInt(row.dataset.id,10));
+    }));
+    c.querySelectorAll('.run-del').forEach(b => b.addEventListener('click', () => askDeleteRun(parseInt(b.dataset.del,10))));
   }
 
   function renderRun(c){
     if(!S.runDetail){ c.innerHTML = `<div class="center-msg">${esc(t('selectRunFrom'))} <b>${esc(t('tabRuns'))}</b></div>`; return; }
     const d = S.runDetail, steps = d.steps || [];
-    const cur = d.run.current_step_index ?? 0;
-    const a = S.automations.find(x => x.key === S.activeKey);
-
-    // Full step list from the manifest (API now returns a.steps); fall back to
-    // executed steps only so the rail still renders without manifest data.
-    const allStepKeys = (a && a.steps && a.steps.length) ? a.steps : steps.map(s => s.name);
-    const stepFor = idx => steps.find(s => s.step_index === idx);
-
-    // Map each step index to a dot class + optional ✓ mark.
-    const railPip = idx => {
-      const s = stepFor(idx);
-      if (!s) return '<span class="pip s-pending"></span>';
-      const done = s.step_index < cur || s.status === 'good';
-      if (done) return '<span class="pip done">✓</span>';
-      if (s.status === 'verify') return '<span class="pip s-verify"></span>';
-      if (s.status === 'bad' || s.status === 'aborted') return '<span class="pip s-bad"></span>';
-      if (s.status === 'running') return '<span class="pip s-running"></span>';
-      return '<span class="pip s-pending"></span>';
-    };
-
-    const rail = allStepKeys.length ? allStepKeys.map((key, idx) => `
-      <div class="step-item ${idx===S.activeStepIdx?'active':''}" data-idx="${idx}" title="${esc(stepName(key))}">
-        ${railPip(idx)}
-        <span class="sname">${esc(stepName(key))}</span>
-      </div>`).join('') : `<div class="muted" style="padding:10px;font-size:.8rem">${esc(t('noStepsRun'))}</div>`;
-
-    // Rail header shows the human-readable automation name, not the technical key.
-    const displayName = a ? a.name : t('stepsHdr');
-    const chevSvg = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>';
-    c.innerHTML = `<div class="run-wrap">
-      <div class="steps-rail${S.railOpen===false?' collapsed':''}">
-        <button class="rail-head" id="railToggle" aria-expanded="${S.railOpen!==false}" title="${esc(t('collapseSteps'))}">
-          ${chevSvg}<span class="rail-title">${esc(displayName)}</span>
-        </button>
-        <div class="rail-body" id="railBody">
-          ${rail}
-        </div>
-      </div>
-      <div class="detail-card" id="stepDetail"></div>
-    </div>`;
-    const railToggle = $('railToggle');
-    if(railToggle) railToggle.addEventListener('click', () => {
-      S.railOpen = S.railOpen === false;
-      const box = c.querySelector('.steps-rail');
-      box.classList.toggle('collapsed', S.railOpen === false);
-      railToggle.setAttribute('aria-expanded', String(S.railOpen !== false));
-    });
-    c.querySelectorAll('.step-item').forEach(it => it.addEventListener('click', () => { S.activeStepIdx = parseInt(it.dataset.idx,10); renderRun($('canvas')); }));
+    c.innerHTML = `<div class="detail-card" id="stepDetail"></div>`;
     renderStepDetail($('stepDetail'), steps.find(s => s.step_index === S.activeStepIdx));
+    // Keep sidebar step rail in sync (active highlight, pip states).
+    renderSidebar();
   }
 
   // Terminal-run banner (completed/aborted): a run that has finished must not
@@ -1110,6 +1157,38 @@
   $('rejectConfirm').addEventListener('click', confirmReject);
   rejectBack.addEventListener('click', e => { if(e.target === rejectBack) closeReject(); });
   $('rejectNotes').addEventListener('keydown', e => { if(e.key === 'Enter') confirmReject(); });
+
+  // ---------- delete-run modal (second-verification + warning before a permanent delete) ----------
+  const delRunBack = $('delRunBack');
+  let _delRunId = null;
+  function askDeleteRun(id){
+    _delRunId = id;
+    const r = S.runs.find(x => x.id === id);
+    $('delRunWhich').textContent = r ? `#${r.id} · ${r.period}` : `#${id}`;
+    delRunBack.setAttribute('data-open','');
+  }
+  function closeDelRun(){ delRunBack.removeAttribute('data-open'); _delRunId = null; }
+  async function confirmDelRun(){
+    if(_delRunId == null) return;
+    const id = _delRunId;
+    delRunBack.removeAttribute('data-open');
+    try {
+      await delJSON(`/runs/${id}`);
+      // If the open run was the one deleted, clear the Current run state.
+      if(S.activeRunId === id){
+        S.activeRunId = null; S.runDetail = null; S.activeStepIdx = 0;
+        S.artifacts = []; S.context = null; $('filesBadge').textContent = '0'; setStatus('—');
+      }
+      await loadRuns();
+      renderSidebar();
+      render();
+      showToast(t('runDeleted'));
+    } catch(e){ showErr(e); }
+    _delRunId = null;
+  }
+  $('delRunCancel').addEventListener('click', closeDelRun);
+  $('delRunConfirm').addEventListener('click', confirmDelRun);
+  delRunBack.addEventListener('click', e => { if(e.target === delRunBack) closeDelRun(); });
 
   // ---------- new run modal ----------
   const newRunBack = $('newRunBack');

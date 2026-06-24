@@ -119,6 +119,45 @@ def test_full_run_flow(tmp_path) -> None:
         assert r.content == b"OK"
 
 
+def test_delete_run_removes_db_rows_and_files(tmp_path) -> None:
+    """DELETE /runs/{id} cascades the DB rows and wipes the on-disk subtree."""
+    app = _fresh_app(tmp_path)
+    with TestClient(app) as c:
+        c.post(
+            "/automations",
+            json={"key": "t.manual", "name": "T", "customer": "Acme"},
+        )
+        r = c.post(
+            "/runs",
+            data={"automation_key": "t.manual", "period": "2025-11"},
+            files={"upload": ("in.xlsx", io.BytesIO(b"FAKE"), "application/octet-stream")},
+        )
+        run_id = r.json()["run_id"]
+        # Run + edit so the run owns a step_execution and an on-disk artifact.
+        c.post(f"/runs/{run_id}/steps/0/execute")
+        c.post(
+            f"/runs/{run_id}/steps/0/edits",
+            json=[{"row_id": "1", "column": "value", "old_value": "before", "new_value": "after"}],
+        )
+        run_dir = Path(tmp_path) / "data" / "runs" / str(run_id)
+        assert run_dir.exists()
+
+        r = c.delete(f"/runs/{run_id}")
+        assert r.status_code == 200, r.text
+        assert r.json()["status"] == "deleted"
+
+        # Gone from the DB (404) and gone from disk.
+        assert c.get(f"/runs/{run_id}").status_code == 404
+        assert not run_dir.exists()
+        # In-memory context evicted — no stale entry lingers.
+        assert run_id not in app.state.contexts
+
+
+def test_delete_unknown_run_is_404(tmp_path) -> None:
+    with TestClient(_fresh_app(tmp_path)) as c:
+        assert c.delete("/runs/999").status_code == 404
+
+
 def test_run_lists_filtered_by_period(tmp_path) -> None:
     with TestClient(_fresh_app(tmp_path)) as c:
         c.post(

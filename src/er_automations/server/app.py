@@ -13,6 +13,7 @@ Endpoints:
     GET  /runs                                 — list (optional filter by automation+period)
     POST /runs                                 — start a run (uploads xlsx + period)
     GET  /runs/{id}                            — current state (steps + statuses)
+    DELETE /runs/{id}                          — permanently remove a run + its files
     GET  /runs/{id}/context                     — inspect the run blackboard (read-only)
     POST /runs/{id}/steps/{idx}/execute        — run step idx, return its state
     POST /runs/{id}/steps/{idx}/approve        — advance
@@ -365,6 +366,29 @@ def _register_routes(app: FastAPI) -> None:
             return _ctx_for(app, run_id, run.period).to_json()
         finally:
             conn.close()
+
+    @app.delete("/runs/{run_id}")
+    def delete_run(run_id: int) -> dict[str, Any]:
+        """Permanently remove a run and everything underneath it.
+
+        Append-only history is the default, but the operator may explicitly
+        discard a run from the UI (double-confirmed there with a warning).
+        DB removal cascades step_execution → artifact/edit rows (FK ON DELETE
+        CASCADE); then we wipe the on-disk artifacts/context mirror and evict
+        the in-memory context so a recreated run id cannot inherit stale state.
+        """
+        conn = init_db(app.state.db_path)
+        try:
+            run = models.get_run(conn, run_id)
+            if run is None:
+                raise HTTPException(404, "run not found")
+            models.delete_run(conn, run_id)
+            conn.commit()
+        finally:
+            conn.close()
+        storage.delete_run_files(app.state.data_root, run_id)
+        app.state.contexts.pop(run_id, None)
+        return {"status": "deleted", "run_id": run_id}
 
 
 # ---------- helpers ----------
