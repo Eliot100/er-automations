@@ -72,10 +72,12 @@ def test_every_referenced_key_exists() -> None:
     referenced: set[str] = set()
     referenced.update(re.findall(r"\bt\(\s*'(\w+)'", HTML))          # t('key', ...)
     referenced.update(re.findall(r'data-i18n(?:-title|-ph)?="(\w+)"', HTML))
-    # statusHe builds keys dynamically as 'st_' + status: the regex captures the
-    # bare prefix `st_` from t('st_'+s) — drop it and assert the real keys exist.
+    # statusHe / stepStatusHe build keys dynamically as 'st_'/'sx_' + value:
+    # the regex captures the bare prefix — drop it and expand the real keys.
     referenced.discard("st_")
     referenced.update({"st_running", "st_paused", "st_completed", "st_aborted"})
+    referenced.discard("sx_")
+    referenced.update({"sx_good", "sx_verify", "sx_running", "sx_bad", "sx_aborted"})
     missing = sorted(k for k in referenced if k not in HE_KEYS)
     assert not missing, f"keys used in UI but absent from the dictionary: {missing}"
 

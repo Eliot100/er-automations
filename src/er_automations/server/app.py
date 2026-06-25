@@ -99,6 +99,7 @@ def build_app(db_path: str | Path, data_root: str | Path) -> FastAPI:
     app.state.data_root = Path(data_root)
     app.state.manifests: dict[str, list[Step]] = {}
     app.state.contexts: dict[int, RunContext] = {}  # run_id -> RunContext
+    app.state.mongo_store = None  # optional; set by launcher if mongo_uri is configured
     # Ensure schema exists; close the connection immediately — handlers
     # open per-request connections.
     init_db(db_path).close()
@@ -395,6 +396,8 @@ def _register_routes(app: FastAPI) -> None:
         finally:
             conn.close()
         storage.delete_run_files(app.state.data_root, run_id)
+        if app.state.mongo_store:
+            app.state.mongo_store.delete_run(run_id)
         app.state.contexts.pop(run_id, None)
         return {"status": "deleted", "run_id": run_id}
 

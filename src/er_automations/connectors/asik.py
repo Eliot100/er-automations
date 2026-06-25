@@ -50,6 +50,10 @@ class AsikReport:
     consumption: pd.DataFrame
     solar: pd.DataFrame
     social_discounts: pd.DataFrame
+    # Solar-tariff consumer rows from the 2_1 sheet (each solar household
+    # appears three times: base meter, EX export meter, SUM summary meter).
+    # Empty frame when the file has no 2_1 tab.
+    page2: pd.DataFrame = field(default_factory=pd.DataFrame)
     metadata: dict[str, str] = field(default_factory=dict)
     sheet_names: list[str] = field(default_factory=list)
 
@@ -72,9 +76,11 @@ def read_asik(path: str | Path) -> AsikReport:
 
         main_name = _find_main_sheet(sheets)
         social_name = _find_first(sheets, _SOCIAL_HINT)
+        page2_name = _find_first(sheets, _PAGE2_HINT)
 
         consumption = _read_consumption_sheet(xl, main_name) if main_name else _empty_consumption()
         social = _read_consumption_sheet(xl, social_name) if social_name else _empty_consumption()
+        page2 = _read_consumption_sheet(xl, page2_name) if page2_name else pd.DataFrame()
         metadata = _read_metadata(xl, main_name) if main_name else {}
         period = _derive_period(metadata)
 
@@ -83,6 +89,7 @@ def read_asik(path: str | Path) -> AsikReport:
         consumption=consumption,
         solar=_empty_solar(),
         social_discounts=social,
+        page2=page2,
         metadata=metadata,
         sheet_names=sheets,
     )

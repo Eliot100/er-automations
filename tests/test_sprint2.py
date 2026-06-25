@@ -49,8 +49,7 @@ SAMPLE_XLSX = (
 def test_asik_reader_smoke() -> None:
     report = read_asik(SAMPLE_XLSX)
     assert report.period == "2026-01"
-    # 3 sheets in the sample file; main + social-discounts are parsed,
-    # page-2 (`2_1`) is intentionally skipped for now.
+    # 3 sheets in the sample file: main, 2_1 (solar consumers), social-discounts.
     assert any("SocialDiscounts" in s for s in report.sheet_names)
     assert not report.consumption.empty
     # Asik reports its own row count under סך הכל שורות; the parser should
@@ -64,8 +63,11 @@ def test_asik_reader_smoke() -> None:
     # Social discounts are smaller but use the same layout.
     assert not report.social_discounts.empty
     assert "שם לקוח" in report.social_discounts.columns
-    # Solar is absent in this file — returned as an empty frame, not None.
+    # Solar (from the dedicated solar-input file) is absent — empty frame, not None.
     assert report.solar.empty
+    # page2 (2_1 tab — solar consumer rows) is present in the sample.
+    assert not report.page2.empty
+    assert "שם לקוח" in report.page2.columns
 
 
 def test_asik_reader_missing_file_raises(tmp_path) -> None:
